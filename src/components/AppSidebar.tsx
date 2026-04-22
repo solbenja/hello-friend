@@ -25,6 +25,7 @@ import {
   Shield,
   Globe,
   FileText,
+  Rocket,
 } from "lucide-react";
 
 const explorerItems = [
@@ -38,6 +39,7 @@ const explorerItems = [
 
 const chainItems = [
   { title: "Swap", url: "/swap", icon: ArrowLeftRight },
+  { title: "Deploy Token", url: "/deploy", icon: Rocket },
   { title: "Terminal", url: "/terminal", icon: Zap },
   { title: "Ecosystem", url: "/ecosystem", icon: Compass },
   { title: "Parameters", url: "/parameters", icon: Shield },
