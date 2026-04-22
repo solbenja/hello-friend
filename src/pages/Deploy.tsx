@@ -93,6 +93,7 @@ function copyText(text: string, label = "Copied") {
   toast({ title: label, description: text });
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export default function Deploy() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
