@@ -49,7 +49,7 @@ const chainItems = [
 
 const litvmItems = [
   { title: "LiteForge Explorer", url: "https://liteforge.explorer.caldera.xyz", icon: Globe, external: true },
-  { title: "Docs", url: "https://docs.litvm.io", icon: FileText, external: true },
+  { title: "Docs", url: "https://docs.litvm.com", icon: FileText, external: true },
 ];
 
 export function AppSidebar() {
