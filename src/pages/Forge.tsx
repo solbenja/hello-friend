@@ -17,13 +17,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Wallet,
+  ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -46,6 +42,7 @@ import {
   genNft,
   genStaking,
   genVesting,
+  genFactory,
   getContractName,
   type FactoryForm,
 } from "@/lib/forgeTemplates";
@@ -56,129 +53,437 @@ type DeployStatus =
   | { kind: "ok"; tx: `0x${string}`; address: `0x${string}` }
   | { kind: "error"; msg: string };
 
-type SupportedKind = Exclude<ForgeKind, "factory">;
+type SupportedKind = ForgeKind;
 
 const TABS: { value: SupportedKind; label: string; icon: typeof Coins; desc: string }[] = [
   { value: "erc20", label: "ERC20 Token", icon: Coins, desc: "Standard fungible token with optional mint, burn, pause." },
   { value: "nft", label: "NFT (ERC721)", icon: ImageIcon, desc: "ERC721 collection with mint price, max supply, public mint toggle." },
   { value: "staking", label: "Staking", icon: Lock, desc: "Single-asset staking pool with daily reward rate and lock period." },
   { value: "vesting", label: "Vesting", icon: Hourglass, desc: "Cliff + linear vesting for team / investor / advisor allocations." },
+  { value: "factory", label: "Token Factory", icon: Hammer, desc: "Deploy your own ERC20 factory with custom fee, whitelist, and token tracking." },
 ];
 
 const initErc20: Erc20Form = {
-  name: "",
-  symbol: "",
-  supply: "1000000",
-  decimals: "18",
-  owner: "",
-  mintable: true,
-  burnable: true,
-  pausable: true,
-  ownable: true,
-  tax: false,
-  reentrancyGuard: true,
-  taxBps: "200",
-  taxAddr: "",
+  name: "", symbol: "", supply: "1000000", decimals: "18", owner: "",
+  mintable: true, burnable: true, pausable: true, ownable: true,
+  tax: false, reentrancyGuard: true, taxBps: "200", taxAddr: "",
 };
 
 const initNft: NftForm = {
-  name: "",
-  symbol: "",
-  maxSupply: "10000",
-  price: "0.05",
-  perWallet: "5",
-  baseUri: "",
-  whitelist: false,
-  reveal: false,
-  royalty: false,
-  royaltyBps: "500",
-  royaltyAddr: "",
+  name: "", symbol: "", maxSupply: "10000", price: "0.05", perWallet: "5",
+  baseUri: "", whitelist: false, reveal: false, royalty: false,
+  royaltyBps: "500", royaltyAddr: "",
 };
 
 const initStaking: StakingForm = {
-  contractName: "",
-  stakeToken: "",
-  rewardToken: "",
-  apr: "12",
-  lockDays: "30",
-  minStake: "1",
-  emergency: true,
-  pausable: true,
-  autoCompound: false,
+  contractName: "", stakeToken: "", rewardToken: "", apr: "12",
+  lockDays: "30", minStake: "1", emergency: true, pausable: true, autoCompound: false,
 };
 
 const initVesting: VestingForm = {
-  contractName: "",
-  token: "",
-  cliffDays: "90",
-  durationDays: "365",
-  beneficiary: "",
-  amount: "",
-  revocable: true,
-  multiBeneficiary: false,
-  emitEvents: true,
+  contractName: "", token: "", cliffDays: "90", durationDays: "365",
+  beneficiary: "", amount: "", revocable: true, multiBeneficiary: false, emitEvents: true,
 };
 
 const initFactoryForm: FactoryForm = {
-  contractName: "LitVMTokenFactory",
-  fee: "0.05",
-  owner: "",
-  mintable: true,
-  burnable: true,
-  pausable: true,
-  customDecimals: true,
-  trackTokens: true,
-  whitelist: false,
+  contractName: "LitVMTokenFactory", fee: "0.05", owner: "",
+  mintable: true, burnable: true, pausable: true,
+  customDecimals: true, trackTokens: true, whitelist: false,
 };
 
-function FieldRow({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>;
+// ─── Shared UI primitives ────────────────────────────────────────────────────
+
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="mb-1.5 block text-xs font-medium text-white/60">
+      {children}{required && <span className="ml-1 text-red-400">*</span>}
+    </label>
+  );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function TextInput({
+  value, onChange, placeholder, maxLength, mono, hint,
+}: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+  maxLength?: number; mono?: boolean; hint?: string;
+}) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</Label>
-      {children}
-      {hint && <p className="text-[10px] font-mono text-muted-foreground/80">{hint}</p>}
-    </div>
+    <>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className={`h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 text-sm text-white placeholder:text-white/20 focus:border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${mono ? "font-mono" : ""}`}
+      />
+      {hint && <div className="mt-1 text-[11px] text-white/30">{hint}</div>}
+    </>
+  );
+}
+
+function NumberInput({
+  value, onChange, min, max, step, hint,
+}: {
+  value: string; onChange: (v: string) => void;
+  min?: number; max?: number; step?: string; hint?: string;
+}) {
+  return (
+    <>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        min={min}
+        max={max}
+        step={step}
+        className="h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 font-mono text-sm text-white placeholder:text-white/20 focus:border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+      />
+      {hint && <div className="mt-1 text-[11px] text-white/30">{hint}</div>}
+    </>
   );
 }
 
 function Toggle({
-  checked,
-  onCheckedChange,
-  label,
+  checked, onChange, label, desc,
 }: {
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
-  label: string;
+  checked: boolean; onChange: (v: boolean) => void; label: string; desc?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onCheckedChange(!checked)}
-      className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-xs transition-all ${
+    <label
+      className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${
         checked
-          ? "border-primary/60 bg-primary/10 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.15)]"
-          : "border-border bg-card/40 text-muted-foreground hover:border-primary/30"
+          ? "border-blue-500/40 bg-blue-500/10"
+          : "border-white/[0.07] bg-white/[0.02] hover:border-blue-500/20"
       }`}
     >
-      <span className="font-medium">{label}</span>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
-    </button>
+      <div>
+        <div className="text-sm font-semibold text-white">{label}</div>
+        {desc && <div className="mt-0.5 text-xs text-white/40">{desc}</div>}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+          checked ? "bg-blue-600" : "bg-white/10 border border-white/10"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </label>
   );
 }
 
-function Divider({ children }: { children: React.ReactNode }) {
+function FieldRow({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-1 gap-5 md:grid-cols-2">{children}</div>;
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
-      <span className="h-px flex-1 bg-border" />
+    <div>
+      <FieldLabel required={required}>{label}</FieldLabel>
       {children}
-      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }
+
+function SectionDivider({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-white/30">
+      <span className="h-px flex-1 bg-white/[0.07]" />
+      {children}
+      <span className="h-px flex-1 bg-white/[0.07]" />
+    </div>
+  );
+}
+
+// ─── Tab panels ──────────────────────────────────────────────────────────────
+
+function Erc20Panel({ form, setForm }: { form: Erc20Form; setForm: (f: Erc20Form) => void }) {
+  const set = <K extends keyof Erc20Form>(k: K, v: Erc20Form[K]) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-5">
+      <FieldRow>
+        <Field label="Token Name" required>
+          <TextInput value={form.name} onChange={(v) => set("name", v)} placeholder="e.g. PepeCoin" maxLength={50} hint="Max 50 characters — appears in wallets" />
+        </Field>
+        <Field label="Token Symbol" required>
+          <TextInput value={form.symbol} onChange={(v) => set("symbol", v.toUpperCase())} placeholder="e.g. PEPE" maxLength={11} mono hint="e.g. PEPE — appears on DEXes" />
+        </Field>
+      </FieldRow>
+      <FieldRow>
+        <Field label="Total Supply" required>
+          <TextInput value={form.supply} onChange={(v) => set("supply", v.replace(/\D/g, ""))} placeholder="1000000" mono hint="Whole units — decimals applied automatically" />
+        </Field>
+        <Field label="Decimals">
+          <NumberInput value={form.decimals} onChange={(v) => set("decimals", v)} min={0} max={18} hint="18 decimals is standard for most tokens" />
+        </Field>
+      </FieldRow>
+      <SectionDivider>features</SectionDivider>
+      <div className="space-y-2">
+        <Toggle label="Mintable" desc="Owner can create additional tokens after launch" checked={form.mintable} onChange={(v) => set("mintable", v)} />
+        <Toggle label="Burnable" desc="Token holders can permanently destroy their tokens" checked={form.burnable} onChange={(v) => set("burnable", v)} />
+        <Toggle label="Pausable" desc="Owner can pause all token transfers in an emergency" checked={form.pausable} onChange={(v) => set("pausable", v)} />
+      </div>
+    </div>
+  );
+}
+
+function NftPanel({ form, setForm }: { form: NftForm; setForm: (f: NftForm) => void }) {
+  const set = <K extends keyof NftForm>(k: K, v: NftForm[K]) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-5">
+      <FieldRow>
+        <Field label="Collection Name" required>
+          <TextInput value={form.name} onChange={(v) => set("name", v)} placeholder="e.g. LitVM Punks" />
+        </Field>
+        <Field label="Symbol" required>
+          <TextInput value={form.symbol} onChange={(v) => set("symbol", v.toUpperCase())} placeholder="e.g. LVMP" mono />
+        </Field>
+      </FieldRow>
+      <FieldRow>
+        <Field label="Max Supply" required>
+          <NumberInput value={form.maxSupply} onChange={(v) => set("maxSupply", v)} hint="Maximum NFTs that can ever exist" />
+        </Field>
+        <Field label={`Mint Price (${LITVM_FACTORY_NATIVE_SYMBOL})`}>
+          <NumberInput value={form.price} onChange={(v) => set("price", v)} step="0.001" hint="Price per NFT mint" />
+        </Field>
+      </FieldRow>
+      <Field label="Base URI" required>
+        <TextInput
+          value={form.baseUri}
+          onChange={(v) => set("baseUri", v)}
+          placeholder="https://api.yourproject.xyz/meta/"
+          hint="Metadata folder — token URIs become {baseURI}{tokenId}.json"
+        />
+      </Field>
+    </div>
+  );
+}
+
+function StakingPanel({ form, setForm }: { form: StakingForm; setForm: (f: StakingForm) => void }) {
+  const set = <K extends keyof StakingForm>(k: K, v: StakingForm[K]) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-5">
+      <FieldRow>
+        <Field label="Staking Token Address" required>
+          <TextInput value={form.stakeToken} onChange={(v) => set("stakeToken", v)} placeholder="0x… ERC20 to stake" mono />
+        </Field>
+        <Field label="Reward Token Address">
+          <TextInput value={form.rewardToken} onChange={(v) => set("rewardToken", v)} placeholder="0x… (blank = same as stake)" mono hint="Leave blank to use same token as reward" />
+        </Field>
+      </FieldRow>
+      <FieldRow>
+        <Field label="Annual Reward Rate (%)">
+          <NumberInput value={form.apr} onChange={(v) => set("apr", v)} hint="Converted to per-day rate × 1e18 on-chain" />
+        </Field>
+        <Field label="Lock Period (days)">
+          <NumberInput value={form.lockDays} onChange={(v) => set("lockDays", v)} hint="Minimum staking duration" />
+        </Field>
+      </FieldRow>
+      <Field label="Pool Label">
+        <TextInput value={form.contractName} onChange={(v) => set("contractName", v)} placeholder="e.g. PEPE Staking Pool" hint="Stored on-chain as the contract's display name" />
+      </Field>
+    </div>
+  );
+}
+
+function VestingPanel({ form, setForm }: { form: VestingForm; setForm: (f: VestingForm) => void }) {
+  const set = <K extends keyof VestingForm>(k: K, v: VestingForm[K]) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-5">
+      <FieldRow>
+        <Field label="Token Address" required>
+          <TextInput value={form.token} onChange={(v) => set("token", v)} placeholder="0x… token to vest" mono />
+        </Field>
+        <Field label="Vesting Label">
+          <TextInput value={form.contractName} onChange={(v) => set("contractName", v)} placeholder="e.g. Team Vesting" />
+        </Field>
+      </FieldRow>
+      <FieldRow>
+        <Field label="Beneficiary Address" required>
+          <TextInput value={form.beneficiary} onChange={(v) => set("beneficiary", v)} placeholder="0x…" mono />
+        </Field>
+        <Field label="Total Amount (wei)" required>
+          <TextInput value={form.amount} onChange={(v) => set("amount", v)} placeholder="e.g. 10000000000000000000000" mono hint="Raw amount including decimals" />
+        </Field>
+      </FieldRow>
+      <FieldRow>
+        <Field label="Cliff Period (days)">
+          <NumberInput value={form.cliffDays} onChange={(v) => set("cliffDays", v)} hint="No tokens released before cliff ends" />
+        </Field>
+        <Field label="Vesting Duration (days after cliff)">
+          <NumberInput value={form.durationDays} onChange={(v) => set("durationDays", v)} />
+        </Field>
+      </FieldRow>
+      <SectionDivider>features</SectionDivider>
+      <Toggle label="Revocable by owner" desc="Owner can cancel and reclaim unvested tokens" checked={form.revocable} onChange={(v) => set("revocable", v)} />
+    </div>
+  );
+}
+
+// ─── NEW: Factory Panel ───────────────────────────────────────────────────────
+
+function FactoryPanel({ form, setForm }: { form: FactoryForm; setForm: (f: FactoryForm) => void }) {
+  const set = <K extends keyof FactoryForm>(k: K, v: FactoryForm[K]) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-5">
+      <FieldRow>
+        <Field label="Factory Contract Name" required>
+          <TextInput
+            value={form.contractName}
+            onChange={(v) => set("contractName", v)}
+            placeholder="e.g. LitVMTokenFactory"
+            maxLength={50}
+            hint="Name of the factory contract itself"
+          />
+        </Field>
+        <Field label="Owner Address">
+          <TextInput
+            value={form.owner}
+            onChange={(v) => set("owner", v)}
+            placeholder="0x… (blank = deployer)"
+            mono
+            hint="Leave blank to use deployer address"
+          />
+        </Field>
+      </FieldRow>
+      <Field label={`Deploy Fee (${LITVM_FACTORY_NATIVE_SYMBOL})`}>
+        <NumberInput
+          value={form.fee}
+          onChange={(v) => set("fee", v)}
+          step="0.001"
+          hint="Fee charged to users who deploy tokens via your factory"
+        />
+      </Field>
+      <SectionDivider>default token features</SectionDivider>
+      <div className="space-y-2">
+        <Toggle label="Mintable" desc="Deployed tokens will support minting by owner" checked={form.mintable} onChange={(v) => set("mintable", v)} />
+        <Toggle label="Burnable" desc="Deployed tokens will support burning by holders" checked={form.burnable} onChange={(v) => set("burnable", v)} />
+        <Toggle label="Pausable" desc="Deployed tokens can be paused by owner" checked={form.pausable} onChange={(v) => set("pausable", v)} />
+      </div>
+      <SectionDivider>factory options</SectionDivider>
+      <div className="space-y-2">
+        <Toggle label="Custom Decimals" desc="Allow deployers to set custom decimal places (0–18)" checked={form.customDecimals} onChange={(v) => set("customDecimals", v)} />
+        <Toggle label="Track Tokens" desc="Factory keeps a registry of all deployed token addresses" checked={form.trackTokens} onChange={(v) => set("trackTokens", v)} />
+        <Toggle label="Whitelist" desc="Only whitelisted addresses can deploy tokens via this factory" checked={form.whitelist} onChange={(v) => set("whitelist", v)} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Deploy Modal ─────────────────────────────────────────────────────────────
+
+function DeployModal({
+  open, status, contractName, onClose,
+}: {
+  open: boolean; status: DeployStatus; contractName: string; onClose: () => void;
+}) {
+  if (!open) return null;
+  const busy = status.kind === "deploying";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+      <div className="relative w-full max-w-sm rounded-2xl border border-white/[0.07] bg-[#0d1117] p-6 text-center">
+        <button
+          onClick={onClose}
+          disabled={busy}
+          className="absolute right-3 top-3 text-white/30 hover:text-white disabled:opacity-30"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="flex justify-center">
+          {status.kind === "ok" ? (
+            <CheckCircle2 className="h-12 w-12 text-blue-400" />
+          ) : status.kind === "error" ? (
+            <AlertCircle className="h-12 w-12 text-red-400" />
+          ) : (
+            <Loader2 className="h-12 w-12 animate-spin text-blue-400" />
+          )}
+        </div>
+
+        <h3 className="mt-4 font-display text-2xl text-white">
+          {status.kind === "deploying" && "Deploying…"}
+          {status.kind === "ok" && "Deployed!"}
+          {status.kind === "error" && "Failed"}
+          {status.kind === "idle" && "Deploy"}
+        </h3>
+        <p className="mt-1 font-mono text-[11px] text-white/30">// {contractName}</p>
+
+        {status.kind === "deploying" && (
+          <p className="mt-3 text-sm text-white/40">
+            Confirm the transaction in your wallet, then waiting for confirmation…
+          </p>
+        )}
+
+        {status.kind === "deploying" && status.tx && (
+          <a
+            href={`${EXPLORER_URL}/tx/${status.tx}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm text-blue-400 hover:underline"
+          >
+            View tx <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
+
+        {status.kind === "ok" && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-left">
+              <div className="text-[10px] uppercase tracking-wider text-white/30">Contract Address</div>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="flex-1 break-all font-mono text-xs text-blue-400">{status.address}</code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(status.address)}
+                  className="shrink-0 text-white/30 hover:text-white"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`${EXPLORER_URL}/address/${status.address}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/60 hover:border-white/20 hover:text-white"
+              >
+                <ExternalLink className="h-3 w-3" /> Contract
+              </a>
+              <a
+                href={`${EXPLORER_URL}/tx/${status.tx}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/60 bg-blue-600/20 px-3 py-2 text-xs font-semibold text-blue-400 hover:bg-blue-600/30"
+              >
+                <ExternalLink className="h-3 w-3" /> Transaction
+              </a>
+            </div>
+          </div>
+        )}
+
+        {status.kind === "error" && (
+          <div className="mt-4 space-y-3">
+            <pre className="max-h-40 overflow-auto rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-left font-mono text-[11px] text-red-400">
+              {status.msg}
+            </pre>
+            <button
+              onClick={onClose}
+              className="h-11 w-full rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-white/60 hover:border-white/20 hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Forge() {
   const [tab, setTab] = useState<SupportedKind>("erc20");
@@ -186,12 +491,8 @@ export default function Forge() {
   const [nft, setNft] = useState<NftForm>(initNft);
   const [staking, setStaking] = useState<StakingForm>(initStaking);
   const [vesting, setVesting] = useState<VestingForm>(initVesting);
-  const [generated, setGenerated] = useState<Record<SupportedKind, string>>({
-    erc20: "",
-    nft: "",
-    staking: "",
-    vesting: "",
-  });
+  const [factory, setFactory] = useState<FactoryForm>(initFactoryForm);
+  const [generated, setGenerated] = useState<Record<SupportedKind, string>>({ erc20: "", nft: "", staking: "", vesting: "", factory: "" });
   const [copied, setCopied] = useState(false);
   const [deploy, setDeploy] = useState<DeployStatus>({ kind: "idle" });
   const [showDeploy, setShowDeploy] = useState(false);
@@ -212,7 +513,7 @@ export default function Forge() {
   const feeEther = feeWei ? formatEther(feeWei as bigint) : LITVM_FACTORY_DEFAULT_FEE_ETHER;
 
   const code = generated[tab];
-  const forms = { erc20, nft, staking, vesting, factory: initFactoryForm };
+  const forms = { erc20, nft, staking, vesting, factory };
   const contractName = getContractName(tab, forms);
   const fileName = useMemo(() => contractName + ".sol", [contractName]);
 
@@ -238,12 +539,7 @@ export default function Forge() {
       );
       setMyContracts(
         (infos as Array<{ contractAddress: `0x${string}`; contractType: number; label: string; deployedAt: bigint }>)
-          .map((i) => ({
-            address: i.contractAddress,
-            type: Number(i.contractType),
-            label: i.label,
-            deployedAt: Number(i.deployedAt),
-          }))
+          .map((i) => ({ address: i.contractAddress, type: Number(i.contractType), label: i.label, deployedAt: Number(i.deployedAt) }))
           .reverse(),
       );
     } catch (e) {
@@ -251,15 +547,14 @@ export default function Forge() {
     }
   };
 
-  useEffect(() => {
-    loadMine();
-  }, [address, publicClient]);
+  useEffect(() => { loadMine(); }, [address, publicClient]);
 
   const onGenerate = () => {
     let out = "";
     if (tab === "erc20") out = genErc20(erc20);
     else if (tab === "nft") out = genNft(nft);
     else if (tab === "staking") out = genStaking(staking);
+    else if (tab === "factory") out = genFactory(factory);
     else out = genVesting(vesting);
     setGenerated((p) => ({ ...p, [tab]: out }));
     toast({ title: "Contract preview generated", description: `${fileName} ready to copy or deploy.` });
@@ -289,7 +584,6 @@ export default function Forge() {
     value: bigint;
   } => {
     const value = (feeWei as bigint | undefined) ?? parseEther(LITVM_FACTORY_DEFAULT_FEE_ETHER);
-
     if (tab === "erc20") {
       if (!erc20.name.trim()) throw new Error("Token name is required");
       if (!erc20.symbol.trim()) throw new Error("Token symbol is required");
@@ -297,46 +591,19 @@ export default function Forge() {
       if (!Number.isFinite(decimals) || decimals < 0 || decimals > 18) throw new Error("Decimals must be 0–18");
       const supply = BigInt(erc20.supply || "0");
       if (supply <= 0n) throw new Error("Supply must be greater than 0");
-      return {
-        functionName: "deployERC20",
-        args: [
-          erc20.name.trim(),
-          erc20.symbol.trim(),
-          decimals,
-          supply,
-          erc20.mintable,
-          erc20.burnable,
-          erc20.pausable,
-        ],
-        value,
-      };
+      return { functionName: "deployERC20", args: [erc20.name.trim(), erc20.symbol.trim(), decimals, supply, erc20.mintable, erc20.burnable, erc20.pausable], value };
     }
-
     if (tab === "nft") {
       if (!nft.name.trim()) throw new Error("Collection name is required");
       if (!nft.symbol.trim()) throw new Error("Symbol is required");
       const maxSupply = BigInt(nft.maxSupply || "0");
       if (maxSupply <= 0n) throw new Error("Max supply must be greater than 0");
       const mintPriceWei = parseEther(nft.price || "0");
-      return {
-        functionName: "deployNFT",
-        args: [
-          nft.name.trim(),
-          nft.symbol.trim(),
-          nft.baseUri.trim(),
-          maxSupply,
-          mintPriceWei,
-          true,
-        ],
-        value,
-      };
+      return { functionName: "deployNFT", args: [nft.name.trim(), nft.symbol.trim(), nft.baseUri.trim(), maxSupply, mintPriceWei, true], value };
     }
-
     if (tab === "staking") {
       if (!isAddress(staking.stakeToken)) throw new Error("Invalid staking token address");
-      const reward = staking.rewardToken && staking.rewardToken.trim().length
-        ? staking.rewardToken
-        : staking.stakeToken;
+      const reward = staking.rewardToken?.trim() ? staking.rewardToken : staking.stakeToken;
       if (!isAddress(reward)) throw new Error("Invalid reward token address");
       const aprNum = Number(staking.apr || "0");
       if (!Number.isFinite(aprNum) || aprNum < 0) throw new Error("Invalid APR");
@@ -344,13 +611,12 @@ export default function Forge() {
       const ratePerDay = aprScaled / (100n * 365n);
       const lockDays = BigInt(staking.lockDays || "0");
       const label = (staking.contractName || `${shortAddr(staking.stakeToken)} Staking`).trim();
-      return {
-        functionName: "deployStaking",
-        args: [staking.stakeToken, reward, ratePerDay, lockDays, label],
-        value,
-      };
+      return { functionName: "deployStaking", args: [staking.stakeToken, reward, ratePerDay, lockDays, label], value };
     }
-
+    if (tab === "factory") {
+      // Factory tab: source-only, no on-chain factory deploy call for this type
+      throw new Error("Token Factory is a source-only template. Use 'Preview Source' to download the Solidity code and deploy manually via Remix or Hardhat.");
+    }
     if (!isAddress(vesting.token)) throw new Error("Invalid token address");
     if (!isAddress(vesting.beneficiary)) throw new Error("Invalid beneficiary address");
     const amount = BigInt(vesting.amount || "0");
@@ -359,11 +625,7 @@ export default function Forge() {
     const durationDays = BigInt(vesting.durationDays || "0");
     if (durationDays <= 0n) throw new Error("Vesting duration must be greater than 0");
     const label = (vesting.contractName || "Vesting").trim();
-    return {
-      functionName: "deployVesting",
-      args: [vesting.token, vesting.beneficiary, amount, cliffDays, durationDays, vesting.revocable, label],
-      value,
-    };
+    return { functionName: "deployVesting", args: [vesting.token, vesting.beneficiary, amount, cliffDays, durationDays, vesting.revocable, label], value };
   };
 
   const onDeploy = async () => {
@@ -375,60 +637,26 @@ export default function Forge() {
     setDeploy({ kind: "deploying" });
     try {
       if (chainId !== LITVM_CHAIN_ID) {
-        try {
-          await switchChainAsync({ chainId: LITVM_CHAIN_ID });
-        } catch {
-          throw new Error("Please switch your wallet to LitVM (Chain 4441) and try again.");
-        }
+        try { await switchChainAsync({ chainId: LITVM_CHAIN_ID }); }
+        catch { throw new Error("Please switch your wallet to LitVM (Chain 4441) and try again."); }
       }
       const { functionName, args, value } = buildFactoryCall();
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const callArgs: any = args;
-
-      await publicClient!.simulateContract({
-        address: LITVM_FACTORY_ADDRESS,
-        abi: LITVM_FACTORY_ABI,
-        functionName,
-        args: callArgs,
-        value,
-        account: address,
-      });
-
-      const hash = await walletClient.writeContract({
-        address: LITVM_FACTORY_ADDRESS,
-        abi: LITVM_FACTORY_ABI,
-        functionName,
-        args: callArgs,
-        value,
-        account: walletClient.account,
-        chain: walletClient.chain,
-      });
+      await publicClient!.simulateContract({ address: LITVM_FACTORY_ADDRESS, abi: LITVM_FACTORY_ABI, functionName, args: callArgs, value, account: address });
+      const hash = await walletClient.writeContract({ address: LITVM_FACTORY_ADDRESS, abi: LITVM_FACTORY_ABI, functionName, args: callArgs, value, account: walletClient.account, chain: walletClient.chain });
       setDeploy({ kind: "deploying", tx: hash });
-
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
-
       let deployedAddr: `0x${string}` | undefined;
       for (const log of receipt.logs) {
         if (log.address.toLowerCase() !== LITVM_FACTORY_ADDRESS.toLowerCase()) continue;
         try {
-          const decoded = decodeEventLog({
-            abi: LITVM_FACTORY_ABI,
-            data: log.data as Hex,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            topics: (log as any).topics,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          }) as any;
-          if (decoded.eventName === "ContractDeployed") {
-            deployedAddr = decoded.args.contractAddress as `0x${string}`;
-            break;
-          }
-        } catch {
-          /* skip non-matching logs */
-        }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const decoded = decodeEventLog({ abi: LITVM_FACTORY_ABI, data: log.data as Hex, topics: (log as any).topics }) as any;
+          if (decoded.eventName === "ContractDeployed") { deployedAddr = decoded.args.contractAddress as `0x${string}`; break; }
+        } catch { /* skip */ }
       }
       if (!deployedAddr) throw new Error("Deployment confirmed but contract address not found in logs.");
-
       setDeploy({ kind: "ok", tx: hash, address: deployedAddr });
       toast({ title: "Contract deployed 🚀", description: `Live at ${shortAddr(deployedAddr)}` });
       loadMine();
@@ -438,195 +666,228 @@ export default function Forge() {
     }
   };
 
+  const activeTab = TABS.find((t) => t.value === tab)!;
+  const isFactoryTab = tab === "factory";
+
   return (
-    <div className="space-y-8 pb-12">
-      <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card/60 to-card/20 p-6 backdrop-blur-xl md:p-10">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-        <div className="relative flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-primary">
-              <Hammer className="h-3 w-3" /> Contract Forge · 1-Click Deploy
-            </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-              Create & deploy on <span className="text-gradient-aurora">LitVM</span>
-            </h1>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              Fill the form → deploy in one transaction. No Remix, no compiler, no setup. Powered by the on-chain{" "}
-              <a
-                href={`${EXPLORER_URL}/address/${LITVM_FACTORY_ADDRESS}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-primary hover:underline"
-              >
-                LitVMFactory
-              </a>{" "}
-              on Chain 4441.
-            </p>
-            <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[11px] text-muted-foreground">
-              <span className="rounded-full border border-border bg-card/60 px-2.5 py-1">
-                Fee: <span className="text-primary">{feeEther} {LITVM_FACTORY_NATIVE_SYMBOL}</span>
-              </span>
-              <span className="rounded-full border border-border bg-card/60 px-2.5 py-1">
-                Factory: <span className="text-foreground/80">{shortAddr(LITVM_FACTORY_ADDRESS)}</span>
-              </span>
-            </div>
+    <div className="space-y-8">
+
+      {/* ── Header ── */}
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-blue-400">
+            <Hammer className="h-3 w-3" /> Contract Forge · 1-Click Deploy
           </div>
-          <ConnectButton />
+          <h1 className="mt-3 font-display text-5xl text-white">
+            Create & <span className="text-blue-400">Deploy</span>
+          </h1>
+          <p className="mt-1 text-sm text-white/40">
+            Fill the form → deploy in one transaction · {feeEther} {LITVM_FACTORY_NATIVE_SYMBOL} fee · LitVM testnet
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5 text-xs">
+            <div className="text-[10px] uppercase tracking-wider text-white/30">Factory</div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(LITVM_FACTORY_ADDRESS); toast({ title: "Factory address copied" }); }}
+              className="mt-0.5 flex items-center gap-1 font-mono text-sm text-white/70 hover:text-white"
+            >
+              {shortAddr(LITVM_FACTORY_ADDRESS)}
+              <Copy className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5 text-xs">
+            <div className="text-[10px] uppercase tracking-wider text-white/30">Deploy Fee</div>
+            <div className="mt-0.5 font-display text-lg text-blue-400">{feeEther} {LITVM_FACTORY_NATIVE_SYMBOL}</div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Tab selector ── */}
+      <div className="flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTab(t.value)}
+            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+              tab === t.value
+                ? "border-blue-500/60 bg-blue-600/20 text-blue-400"
+                : "border-white/[0.07] bg-white/[0.03] text-white/40 hover:border-blue-500/20 hover:text-white/70"
+            }`}
+          >
+            <t.icon className="h-4 w-4" />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Main form card ── */}
+      <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] p-6 md:p-8">
+
+        {/* Tab header */}
+        <div className="mb-6 flex items-start gap-3">
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-2.5">
+            <activeTab.icon className="h-5 w-5 text-blue-400" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl text-white">{activeTab.label}</h2>
+            <p className="mt-0.5 font-mono text-xs text-white/30">// {activeTab.desc}</p>
+          </div>
+        </div>
+
+        {/* Panel */}
+        {tab === "erc20" && <Erc20Panel form={erc20} setForm={setErc20} />}
+        {tab === "nft" && <NftPanel form={nft} setForm={setNft} />}
+        {tab === "staking" && <StakingPanel form={staking} setForm={setStaking} />}
+        {tab === "vesting" && <VestingPanel form={vesting} setForm={setVesting} />}
+        {tab === "factory" && <FactoryPanel form={factory} setForm={setFactory} />}
+
+        {/* Factory notice */}
+        {isFactoryTab && (
+          <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+            <p>Token Factory generates a <span className="font-semibold text-amber-300">source-only</span> template. Use <span className="font-semibold text-amber-300">Preview Source</span> to download the Solidity file, then deploy via Remix or Hardhat.</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            onClick={onGenerate}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-white/70 transition-colors hover:border-blue-500/30 hover:text-white"
+          >
+            <Zap className="h-4 w-4" /> Preview Source
+          </button>
+          <button
+            onClick={isFactoryTab ? onGenerate : onDeploy}
+            disabled={deploy.kind === "deploying"}
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-xl border text-base font-semibold tracking-wide transition-colors disabled:opacity-60 ${
+              isFactoryTab
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                : "border-blue-500/60 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
+            }`}
+          >
+            {deploy.kind === "deploying" && !isFactoryTab ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isFactoryTab ? (
+              <Download className="h-5 w-5" />
+            ) : (
+              <Rocket className="h-5 w-5" />
+            )}
+            {isFactoryTab ? "Generate & Download" : `Deploy (${feeEther} ${LITVM_FACTORY_NATIVE_SYMBOL})`}
+          </button>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as SupportedKind)}>
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0">
-          {TABS.map((t) => (
-            <TabsTrigger
-              key={t.value}
-              value={t.value}
-              className="gap-2 rounded-xl border border-border bg-card/50 px-4 py-2.5 text-xs font-medium text-muted-foreground backdrop-blur transition-all data-[state=active]:border-primary/60 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-glow-violet"
-            >
-              <t.icon className="h-4 w-4" />
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {TABS.map((t) => (
-          <TabsContent key={t.value} value={t.value} className="mt-6">
-            <Card className="border-border/60 bg-card/60 p-6 backdrop-blur-xl md:p-8">
-              <div className="mb-6 flex items-start gap-3">
-                <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5">
-                  <t.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-display text-lg font-semibold">{t.label}</h2>
-                  <p className="mt-1 font-mono text-xs text-muted-foreground">// {t.desc}</p>
-                </div>
-              </div>
-
-              {t.value === "erc20" && <Erc20Panel form={erc20} setForm={setErc20} />}
-              {t.value === "nft" && <NftPanel form={nft} setForm={setNft} />}
-              {t.value === "staking" && <StakingPanel form={staking} setForm={setStaking} />}
-              {t.value === "vesting" && <VestingPanel form={vesting} setForm={setVesting} />}
-
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Button
-                  onClick={onGenerate}
-                  size="lg"
-                  variant="outline"
-                  className="gap-2 text-sm font-medium"
-                >
-                  <Zap className="h-4 w-4" /> Preview Source
-                </Button>
-                <Button
-                  onClick={onDeploy}
-                  disabled={deploy.kind === "deploying"}
-                  size="lg"
-                  className="gap-2 bg-gradient-violet text-base font-semibold shadow-glow-violet hover:opacity-90"
-                >
-                  {deploy.kind === "deploying" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Rocket className="h-4 w-4" />
-                  )}
-                  Deploy ({feeEther} {LITVM_FACTORY_NATIVE_SYMBOL})
-                </Button>
-              </div>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
-
+      {/* ── Source preview ── */}
       {code && (
-        <Card id="forge-output" className="overflow-hidden border-primary/20 bg-card/70 backdrop-blur-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-5 py-3">
+        <div id="forge-output" className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d1117]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] bg-white/[0.02] px-5 py-3">
             <div className="flex items-center gap-3">
-              <div className="font-mono text-sm text-primary">{fileName}</div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] text-primary">
-                <span className="status-dot" /> Source preview
+              <span className="font-mono text-sm text-blue-400">{fileName}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 font-mono text-[10px] text-blue-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" /> Source preview
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" onClick={onCopy} className="gap-1.5">
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            <div className="flex gap-2">
+              <button
+                onClick={onCopy}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 hover:border-white/20 hover:text-white"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-blue-400" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button variant="outline" size="sm" onClick={onDownload} className="gap-1.5">
+              </button>
+              <button
+                onClick={onDownload}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 hover:border-white/20 hover:text-white"
+              >
                 <Download className="h-3.5 w-3.5" /> Download
-              </Button>
+              </button>
             </div>
           </div>
-          <pre className="max-h-[600px] overflow-auto bg-background/40 p-5 font-mono text-xs leading-relaxed text-foreground/90">
+          <pre className="max-h-[600px] overflow-auto bg-black/20 p-5 font-mono text-xs leading-relaxed text-white/80">
             <code>{code}</code>
           </pre>
-          <div className="flex items-start gap-2 border-t border-border/60 bg-card/60 px-5 py-3 text-[11px] text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 text-primary" />
+          <div className="flex items-start gap-2 border-t border-white/[0.07] bg-white/[0.02] px-5 py-3 text-[11px] text-white/30">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 text-blue-400" />
             <p>
-              Reference source — your actual deployment uses the audited on-chain factory at{" "}
-              <span className="font-mono text-foreground/80">{shortAddr(LITVM_FACTORY_ADDRESS)}</span>.
+              {isFactoryTab
+                ? "Factory source template — deploy this contract manually via Remix, Hardhat, or Foundry."
+                : `Reference source — your actual deployment uses the audited on-chain factory at `}
+              {!isFactoryTab && <span className="font-mono text-white/50">{shortAddr(LITVM_FACTORY_ADDRESS)}</span>}
+              {!isFactoryTab && "."}
             </p>
           </div>
-        </Card>
+        </div>
       )}
 
-      <Card className="border-border/60 bg-card/60 p-5 backdrop-blur-xl md:p-6">
+      {/* ── My deployed contracts ── */}
+      <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] p-5 md:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-primary" />
-            <h3 className="font-display text-base font-semibold">My deployed contracts</h3>
+            <Wallet className="h-4 w-4 text-blue-400" />
+            <h3 className="font-display text-lg text-white">My Deployed Contracts</h3>
           </div>
-          <Button variant="outline" size="sm" onClick={loadMine} disabled={!address}>
+          <button
+            onClick={loadMine}
+            disabled={!address}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/50 hover:border-white/20 hover:text-white disabled:opacity-30"
+          >
             Refresh
-          </Button>
+          </button>
         </div>
+
         {!address && (
-          <p className="font-mono text-xs text-muted-foreground">// Connect a wallet to see your deployments.</p>
+          <p className="font-mono text-xs text-white/30">// Connect a wallet to see your deployments.</p>
         )}
         {address && myContracts.length === 0 && (
-          <p className="font-mono text-xs text-muted-foreground">// No contracts deployed yet from this address.</p>
+          <p className="font-mono text-xs text-white/30">// No contracts deployed yet from this address.</p>
         )}
         {myContracts.length > 0 && (
           <div className="space-y-2">
             {myContracts.map((c) => (
               <div
                 key={c.address}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/40 px-3 py-2.5"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 transition-all hover:border-blue-500/30"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-primary">
+                    <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-blue-400">
                       {FACTORY_TYPE_LABEL[c.type] ?? "?"}
                     </span>
-                    <span className="truncate text-sm font-medium">{c.label || "—"}</span>
+                    <span className="truncate text-sm font-medium text-white">{c.label || "—"}</span>
                   </div>
                   <a
                     href={`${EXPLORER_URL}/address/${c.address}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-mono text-[11px] text-muted-foreground hover:text-primary"
+                    className="font-mono text-[11px] text-white/30 hover:text-blue-400"
                   >
                     {c.address}
                   </a>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 px-2 text-[10px]"
+                  <button
                     onClick={() => navigator.clipboard.writeText(c.address)}
+                    className="flex h-8 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 text-[11px] text-white/40 hover:border-white/20 hover:text-white"
                   >
                     <Copy className="h-3 w-3" /> Copy
-                  </Button>
-                  <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2 text-[10px]">
-                    <a href={`${EXPLORER_URL}/address/${c.address}`} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-3 w-3" /> Explorer
-                    </a>
-                  </Button>
+                  </button>
+                  <a
+                    href={`${EXPLORER_URL}/address/${c.address}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-8 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 text-[11px] text-white/40 hover:border-white/20 hover:text-white"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Explorer
+                  </a>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </Card>
+      </div>
 
       <DeployModal
         open={showDeploy}
@@ -634,237 +895,6 @@ export default function Forge() {
         contractName={contractName}
         onClose={() => setShowDeploy(false)}
       />
-    </div>
-  );
-}
-
-function DeployModal({
-  open,
-  status,
-  contractName,
-  onClose,
-}: {
-  open: boolean;
-  status: DeployStatus;
-  contractName: string;
-  onClose: () => void;
-}) {
-  if (!open) return null;
-  const busy = status.kind === "deploying";
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md border-primary/30 bg-card/95 p-6 shadow-2xl">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-primary/30 bg-primary/10 p-2.5">
-              {status.kind === "ok" ? (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              ) : status.kind === "error" ? (
-                <AlertCircle className="h-5 w-5 text-destructive" />
-              ) : (
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-display text-base font-semibold">
-                {status.kind === "deploying" && "Deploying to LitVM…"}
-                {status.kind === "ok" && "Contract deployed 🚀"}
-                {status.kind === "error" && "Deployment failed"}
-                {status.kind === "idle" && "Deploy contract"}
-              </h3>
-              <p className="font-mono text-[11px] text-muted-foreground">// {contractName}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            disabled={busy}
-            className="rounded-lg p-1 text-muted-foreground transition hover:bg-card hover:text-foreground disabled:opacity-40"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {status.kind === "deploying" && (
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <p>Confirm the transaction in your wallet, then waiting for block confirmation…</p>
-            {status.tx && (
-              <a
-                href={`${EXPLORER_URL}/tx/${status.tx}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 font-mono text-primary hover:underline"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {status.tx.slice(0, 10)}…{status.tx.slice(-8)}
-              </a>
-            )}
-          </div>
-        )}
-
-        {status.kind === "ok" && (
-          <div className="space-y-3">
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <Label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Contract address
-              </Label>
-              <div className="mt-1 flex items-center gap-2">
-                <code className="flex-1 break-all font-mono text-xs text-primary">{status.address}</code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigator.clipboard.writeText(status.address)}
-                  className="h-7 gap-1 px-2 text-[10px]"
-                >
-                  <Copy className="h-3 w-3" /> Copy
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button asChild variant="outline" size="sm" className="gap-1.5">
-                <a href={`${EXPLORER_URL}/address/${status.address}`} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3 w-3" /> Contract
-                </a>
-              </Button>
-              <Button asChild size="sm" className="gap-1.5 bg-gradient-violet shadow-glow-violet hover:opacity-90">
-                <a href={`${EXPLORER_URL}/tx/${status.tx}`} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3 w-3" /> Transaction
-                </a>
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {status.kind === "error" && (
-          <div className="space-y-3">
-            <pre className="max-h-60 overflow-auto rounded-xl border border-destructive/30 bg-destructive/5 p-3 font-mono text-[11px] text-destructive">
-              {status.msg}
-            </pre>
-            <Button onClick={onClose} variant="outline" size="sm" className="w-full">
-              Close
-            </Button>
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function Erc20Panel({ form, setForm }: { form: Erc20Form; setForm: (f: Erc20Form) => void }) {
-  const set = <K extends keyof Erc20Form>(k: K, v: Erc20Form[K]) => setForm({ ...form, [k]: v });
-  return (
-    <div className="space-y-4">
-      <FieldRow>
-        <Field label="Token Name">
-          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. PepeCoin" />
-        </Field>
-        <Field label="Token Symbol">
-          <Input value={form.symbol} onChange={(e) => set("symbol", e.target.value)} placeholder="e.g. PEPE" />
-        </Field>
-      </FieldRow>
-      <FieldRow>
-        <Field label="Total Supply" hint="Whole tokens — decimals applied automatically by the contract">
-          <Input type="number" value={form.supply} onChange={(e) => set("supply", e.target.value)} />
-        </Field>
-        <Field label="Decimals">
-          <Input type="number" value={form.decimals} onChange={(e) => set("decimals", e.target.value)} min={0} max={18} />
-        </Field>
-      </FieldRow>
-      <Divider>features</Divider>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <Toggle label="Mintable" checked={form.mintable} onCheckedChange={(v) => set("mintable", v)} />
-        <Toggle label="Burnable" checked={form.burnable} onCheckedChange={(v) => set("burnable", v)} />
-        <Toggle label="Pausable" checked={form.pausable} onCheckedChange={(v) => set("pausable", v)} />
-      </div>
-    </div>
-  );
-}
-
-function NftPanel({ form, setForm }: { form: NftForm; setForm: (f: NftForm) => void }) {
-  const set = <K extends keyof NftForm>(k: K, v: NftForm[K]) => setForm({ ...form, [k]: v });
-  return (
-    <div className="space-y-4">
-      <FieldRow>
-        <Field label="Collection Name">
-          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. LitVM Punks" />
-        </Field>
-        <Field label="Symbol">
-          <Input value={form.symbol} onChange={(e) => set("symbol", e.target.value)} placeholder="e.g. LVMP" />
-        </Field>
-      </FieldRow>
-      <FieldRow>
-        <Field label="Max Supply">
-          <Input type="number" value={form.maxSupply} onChange={(e) => set("maxSupply", e.target.value)} />
-        </Field>
-        <Field label="Mint Price (zkLTC)">
-          <Input type="number" step="0.001" value={form.price} onChange={(e) => set("price", e.target.value)} />
-        </Field>
-      </FieldRow>
-      <Field label="Base URI" hint="Metadata folder — token URIs become {baseURI}{tokenId}.json">
-        <Input value={form.baseUri} onChange={(e) => set("baseUri", e.target.value)} placeholder="https://api.yourproject.xyz/meta/" />
-      </Field>
-    </div>
-  );
-}
-
-function StakingPanel({ form, setForm }: { form: StakingForm; setForm: (f: StakingForm) => void }) {
-  const set = <K extends keyof StakingForm>(k: K, v: StakingForm[K]) => setForm({ ...form, [k]: v });
-  return (
-    <div className="space-y-4">
-      <FieldRow>
-        <Field label="Staking Token Address">
-          <Input value={form.stakeToken} onChange={(e) => set("stakeToken", e.target.value)} placeholder="0x... ERC20 to stake" />
-        </Field>
-        <Field label="Reward Token Address" hint="Blank = same as stake token">
-          <Input value={form.rewardToken} onChange={(e) => set("rewardToken", e.target.value)} placeholder="0x..." />
-        </Field>
-      </FieldRow>
-      <FieldRow>
-        <Field label="Annual Reward Rate (%)" hint="Converted to per-day rate × 1e18 on-chain">
-          <Input type="number" value={form.apr} onChange={(e) => set("apr", e.target.value)} />
-        </Field>
-        <Field label="Lock Period (days)">
-          <Input type="number" value={form.lockDays} onChange={(e) => set("lockDays", e.target.value)} />
-        </Field>
-      </FieldRow>
-      <Field label="Pool Label" hint="Stored on-chain as the contract's display name">
-        <Input value={form.contractName} onChange={(e) => set("contractName", e.target.value)} placeholder="e.g. PEPE Staking Pool" />
-      </Field>
-    </div>
-  );
-}
-
-function VestingPanel({ form, setForm }: { form: VestingForm; setForm: (f: VestingForm) => void }) {
-  const set = <K extends keyof VestingForm>(k: K, v: VestingForm[K]) => setForm({ ...form, [k]: v });
-  return (
-    <div className="space-y-4">
-      <FieldRow>
-        <Field label="Token Address">
-          <Input value={form.token} onChange={(e) => set("token", e.target.value)} placeholder="0x... token to vest" />
-        </Field>
-        <Field label="Vesting Label">
-          <Input value={form.contractName} onChange={(e) => set("contractName", e.target.value)} placeholder="e.g. Team Vesting" />
-        </Field>
-      </FieldRow>
-      <FieldRow>
-        <Field label="Beneficiary Address">
-          <Input value={form.beneficiary} onChange={(e) => set("beneficiary", e.target.value)} placeholder="0x..." />
-        </Field>
-        <Field label="Total Amount (wei)" hint="Raw amount including decimals — e.g. 10000 * 10^18">
-          <Input type="number" value={form.amount} onChange={(e) => set("amount", e.target.value)} placeholder="e.g. 10000000000000000000000" />
-        </Field>
-      </FieldRow>
-      <FieldRow>
-        <Field label="Cliff Period (days)" hint="No tokens released before cliff ends">
-          <Input type="number" value={form.cliffDays} onChange={(e) => set("cliffDays", e.target.value)} />
-        </Field>
-        <Field label="Vesting Duration (days after cliff)">
-          <Input type="number" value={form.durationDays} onChange={(e) => set("durationDays", e.target.value)} />
-        </Field>
-      </FieldRow>
-      <Divider>features</Divider>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <Toggle label="Revocable by owner" checked={form.revocable} onCheckedChange={(v) => set("revocable", v)} />
-      </div>
     </div>
   );
 }

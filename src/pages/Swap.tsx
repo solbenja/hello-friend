@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownUp, ChevronDown, ExternalLink, RefreshCw, Search, Settings2, Star, X, Zap } from "lucide-react";
+import { ArrowDownUp, ChevronDown, ExternalLink, RefreshCw, Search, Settings2, SlidersHorizontal, Star, X } from "lucide-react";
 import { BrowserProvider, Contract, JsonRpcProvider, formatEther, formatUnits, parseUnits, isAddress } from "ethers";
 import { useAccount, useSwitchChain } from "wagmi";
 import {
@@ -261,7 +261,6 @@ export default function Swap() {
     return () => { cancel = true; };
   }, [routerAddr]);
 
-  // Load token in / out metas
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -284,7 +283,6 @@ export default function Swap() {
     return () => { cancel = true; };
   }, [tokenOutAddr, walletAddr]);
 
-  // Load all SWAP_TOKENS balances for the picker (lazy / fire-and-forget)
   useEffect(() => {
     let cancel = false;
     if (!walletAddr) { setTokenBalances({}); return; }
@@ -458,7 +456,10 @@ export default function Swap() {
   let action: React.ReactNode = null;
   if (!isConnected) {
     action = (
-      <button disabled className="h-14 w-full rounded-xl border border-border/60 bg-surface/60 text-sm font-medium text-muted-foreground">
+      <button
+        disabled
+        className="h-14 w-full rounded-xl border border-blue-500/60 bg-blue-600/20 text-sm font-semibold text-blue-400 tracking-wide"
+      >
         Connect wallet to swap
       </button>
     );
@@ -498,13 +499,13 @@ export default function Swap() {
     })();
     if (needsApprove) {
       action = (
-        <button onClick={onApprove} disabled={busy} className="btn-primary h-14 w-full text-base">
+        <button onClick={onApprove} disabled={busy} className="h-14 w-full rounded-xl border border-blue-500/60 bg-blue-600/20 text-sm font-semibold text-blue-400 tracking-wide transition-colors hover:bg-blue-600/30 disabled:opacity-60">
           {busy ? "Working…" : `Approve ${tokenIn.symbol}`}
         </button>
       );
     } else {
       action = (
-        <button onClick={onSwap} disabled={busy} className="btn-primary h-14 w-full text-base">
+        <button onClick={onSwap} disabled={busy} className="h-14 w-full rounded-xl border border-blue-500/60 bg-blue-600/20 text-sm font-semibold text-blue-400 tracking-wide transition-colors hover:bg-blue-600/30 disabled:opacity-60">
           {busy ? "Swapping…" : `Swap ${tokenIn.symbol} → ${tokenOut.symbol}`}
         </button>
       );
@@ -512,41 +513,31 @@ export default function Swap() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-primary">
-          <Zap className="h-3 w-3" /> Best price routing
-        </div>
-        <h1 className="mt-4 font-display text-5xl md:text-6xl">
-          <span className="text-gradient-aurora">LitVM</span>
-          <span className="text-foreground">Swap</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-          Trade any LitVM token instantly · zkLTC native · low fees · instant settlement
-        </p>
-      </div>
+    <div className="flex min-h-screen items-start justify-center px-4 pt-10">
+      <div className="w-full max-w-[440px]">
 
-      {/* Swap card */}
-      <div className="mx-auto max-w-lg">
-        <div className="panel-elevated relative p-5 md:p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl text-gradient-violet">Swap Your Assets</h2>
+        {/* ── Swap Card ── */}
+        <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] shadow-2xl">
+
+          {/* ── Top bar: Title + Icons ── */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-3">
+            <h2 className="font-display text-xl font-semibold text-white">Swap Your Assets</h2>
+
+            {/* Icon buttons */}
             <div className="relative flex items-center gap-2">
               <button
                 onClick={() => fetchQuote()}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-surface/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-colors hover:border-white/20 hover:text-white"
                 title="Refresh quote"
               >
                 <RefreshCw className={`h-4 w-4 ${quoteLoading ? "animate-spin" : ""}`} />
               </button>
               <button
                 onClick={() => setSettingsOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-surface/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-colors hover:border-white/20 hover:text-white"
                 title="Settings"
               >
-                <Settings2 className="h-4 w-4" />
+                <SlidersHorizontal className="h-4 w-4" />
               </button>
               <SettingsPopover
                 open={settingsOpen}
@@ -557,131 +548,143 @@ export default function Swap() {
             </div>
           </div>
 
-          {/* You pay */}
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">You pay</span>
-              {tokenIn && (
-                <button onClick={onMax} className="text-muted-foreground hover:text-primary">
-                  Balance: {(+tokenIn.balance).toFixed(4)} {tokenIn.symbol}
-                </button>
-              )}
-            </div>
-            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border/60 bg-background/60 p-3 transition-colors focus-within:border-primary/50">
-              <button
-                onClick={() => setPickerSide("in")}
-                className="flex shrink-0 items-center gap-2 rounded-xl border border-border/40 bg-surface/80 px-3 py-2 transition-colors hover:border-primary/40"
-              >
-                <TokenAvatar symbol={tokenIn?.symbol || "?"} size={28} />
-                <span className="font-display text-base text-primary">{tokenIn?.symbol || "Select"}</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <input
-                value={amountIn}
-                onChange={(e) => setAmountIn(e.target.value.replace(/[^0-9.]/g, ""))}
-                placeholder="0.0"
-                inputMode="decimal"
-                className="w-full bg-transparent text-right font-display text-3xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
-              />
-            </div>
-          </div>
+          <div className="space-y-1 px-3 pb-3">
 
-          {/* Flip */}
-          <div className="my-2 flex justify-center">
-            <button
-              onClick={onFlip}
-              className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-surface/80 text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:rotate-180"
-            >
-              <ArrowDownUp className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* You receive */}
-          <div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">You receive</span>
-              {tokenOut && (
-                <span className="text-muted-foreground">
-                  Balance: {(+tokenOut.balance).toFixed(4)} {tokenOut.symbol}
-                </span>
-              )}
-            </div>
-            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border/60 bg-background/60 p-3">
-              <button
-                onClick={() => setPickerSide("out")}
-                className="flex shrink-0 items-center gap-2 rounded-xl border border-border/40 bg-surface/80 px-3 py-2 transition-colors hover:border-primary/40"
-              >
-                <TokenAvatar symbol={tokenOut?.symbol || "?"} size={28} />
-                <span className="font-display text-base text-primary">{tokenOut?.symbol || "Select"}</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <div className="w-full text-right font-display text-3xl text-foreground">
-                {quoteLoading ? "…" : amountOut ? (+amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 }) : <span className="text-muted-foreground/40">0.0</span>}
+            {/* ── You pay ── */}
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+              <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+                <span>You pay</span>
+                {tokenIn && (
+                  <button onClick={onMax} className="hover:text-white/70 transition-colors">
+                    Balance: {(+tokenIn.balance).toFixed(4)} {tokenIn.symbol}
+                  </button>
+                )}
               </div>
-            </div>
-          </div>
-
-          {/* Quote details */}
-          {(priceStr || minRecv) && (
-            <div className="mt-4 space-y-1.5 rounded-xl border border-border/40 bg-background/40 p-3 text-xs">
-              {priceStr && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Rate</span>
-                  <span className="font-mono text-foreground">{priceStr}</span>
-                </div>
-              )}
-              {minRecv && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Min received ({slippage}%)</span>
-                  <span className="font-mono text-foreground">{minRecv}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Network</span>
-                <span className="font-mono text-foreground">LitVM LiteForge</span>
-              </div>
-            </div>
-          )}
-
-          {/* Status */}
-          {status.kind !== "idle" && status.msg && (
-            <div
-              className={`mt-4 flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-xs ${
-                status.kind === "error"
-                  ? "border-destructive/40 bg-destructive/10 text-destructive"
-                  : status.kind === "ok"
-                  ? "border-green/40 bg-green/10 text-green"
-                  : "border-primary/30 bg-primary/10 text-primary"
-              }`}
-            >
-              <span className="min-w-0 break-words">{status.msg}</span>
-              {status.txHash && (
-                <a
-                  href={`${EXPLORER_URL}/tx/${status.txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-current/40 px-2 py-1 font-medium hover:bg-current/10"
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPickerSide("in")}
+                  className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 transition-colors hover:border-white/20"
                 >
-                  Explorer <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+                  <TokenAvatar symbol={tokenIn?.symbol || "?"} size={26} />
+                  <span className="text-sm font-semibold text-white">{tokenIn?.symbol || "Select"}</span>
+                  <ChevronDown className="h-4 w-4 text-white/40" />
+                </button>
+                <input
+                  value={amountIn}
+                  onChange={(e) => setAmountIn(e.target.value.replace(/[^0-9.]/g, ""))}
+                  placeholder="0"
+                  inputMode="decimal"
+                  className="w-full bg-transparent text-right font-display text-3xl text-white placeholder:text-white/20 focus:outline-none"
+                />
+              </div>
             </div>
-          )}
 
-          {/* Action button */}
-          <div className="mt-5">{action}</div>
+            {/* ── Flip button ── */}
+            <div className="flex justify-center py-0.5 relative z-10">
+              <button
+                onClick={onFlip}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#0d1117] text-white/50 transition-all hover:border-white/20 hover:text-white hover:rotate-180"
+              >
+                <ArrowDownUp className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* ── You receive ── */}
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+              <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+                <span>You receive</span>
+                {tokenOut && (
+                  <span>Balance: {(+tokenOut.balance).toFixed(4)} {tokenOut.symbol}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPickerSide("out")}
+                  className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 transition-colors hover:border-white/20"
+                >
+                  <TokenAvatar symbol={tokenOut?.symbol || "?"} size={26} />
+                  <span className="text-sm font-semibold text-white">{tokenOut?.symbol || "Select"}</span>
+                  <ChevronDown className="h-4 w-4 text-white/40" />
+                </button>
+                <div className="w-full text-right font-display text-3xl text-white">
+                  {quoteLoading
+                    ? <span className="text-white/30 text-base">…</span>
+                    : amountOut
+                    ? (+amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 })
+                    : <span className="text-white/20">0</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* ── Quote details ── */}
+            {(priceStr || minRecv) && (
+              <div className="space-y-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-xs">
+                {priceStr && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/40">Rate</span>
+                    <span className="font-mono text-white/80">{priceStr}</span>
+                  </div>
+                )}
+                {minRecv && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/40">Min received ({slippage}%)</span>
+                    <span className="font-mono text-white/80">{minRecv}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40">Network</span>
+                  <span className="font-mono text-white/80">LitVM LiteForge</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── Status ── */}
+            {status.kind !== "idle" && status.msg && (
+              <div
+                className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-xs ${
+                  status.kind === "error"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : status.kind === "ok"
+                    ? "border-green-500/40 bg-green-500/10 text-green-400"
+                    : "border-blue-500/30 bg-blue-500/10 text-blue-400"
+                }`}
+              >
+                <span className="min-w-0 break-words">{status.msg}</span>
+                {status.txHash && (
+                  <a
+                    href={`${EXPLORER_URL}/tx/${status.txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-current/40 px-2 py-1 font-medium hover:bg-current/10"
+                  >
+                    Explorer <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* ── Action button ── */}
+            <div className="pt-1">{action}</div>
+          </div>
         </div>
 
-        <div className="mt-3 text-center text-[11px] text-muted-foreground">
+        {/* ── Footer ── */}
+        <div className="mt-3 text-center text-[11px] text-white/30">
           Routed via{" "}
-          <a href={`${EXPLORER_URL}/address/${routerAddr}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+          <a
+            href={`${EXPLORER_URL}/address/${routerAddr}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-400/70 hover:text-blue-400"
+          >
             {shortAddr(routerAddr)}
           </a>{" "}
           · OmniFun V2 Router
         </div>
       </div>
 
-      {/* Token picker modal */}
+      {/* ── Token picker modal ── */}
       <TokenPickerModal
         open={pickerSide !== null}
         onClose={() => setPickerSide(null)}
