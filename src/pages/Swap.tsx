@@ -213,6 +213,7 @@ function TokenPickerModal({
           )}
         </div>
       </div>
+      </TiltCard>
     </div>
   );
 }
