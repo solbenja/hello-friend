@@ -1,4 +1,4 @@
-import { Boxes, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useLitvmNetwork } from "@/hooks/useLitvmNetwork";
 import { EXPLORER_URL } from "@/lib/litvm";
 
