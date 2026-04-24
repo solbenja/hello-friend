@@ -500,6 +500,9 @@ export default function Forge() {
   const [deploy, setDeploy] = useState<DeployStatus>({ kind: "idle" });
   const [showDeploy, setShowDeploy] = useState(false);
   const [myContracts, setMyContracts] = useState<Array<{ address: `0x${string}`; type: number; label: string; deployedAt: number }>>([]);
+  const [resultModal, setResultModal] = useState<{
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
+  }>({ open: false, kind: "ok", title: "" });
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
