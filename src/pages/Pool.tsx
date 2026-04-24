@@ -392,7 +392,7 @@ export default function Pool() {
           <span className="text-gradient-aurora">Pools</span>
         </h1>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Provide liquidity to LiteSwap V2 pairs and earn LP tokens · Powered by your own factory & router.
+          Provide liquidity to LitDeX V2 pairs and earn LP tokens · Powered by your own factory & router.
         </p>
       </div>
 
