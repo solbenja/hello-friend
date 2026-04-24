@@ -98,7 +98,8 @@ function TokenPickerModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/70 p-4 pt-[10vh] backdrop-blur-md animate-fade-in" onClick={onClose}>
-      <div className="w-full max-w-md panel-elevated p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <TiltCard tiltLimit={5} scale={1.01} className="w-full max-w-md animate-scale-in">
+      <div className="w-full panel-elevated p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="font-display text-xl text-gradient-aurora">Select a Token</h3>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface hover:text-foreground">
