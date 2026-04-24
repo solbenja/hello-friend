@@ -1,4 +1,4 @@
-import { Network as NetIcon } from "lucide-react";
+// (Network icon removed per design — heading uses gradient only)
 import { RPC_URL, EXPLORER_URL, LITVM_CHAIN_ID } from "@/lib/litvm";
 import { useLitvmNetwork } from "@/hooks/useLitvmNetwork";
 
