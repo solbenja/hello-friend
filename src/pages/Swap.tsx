@@ -745,6 +745,7 @@ export default function Swap() {
             <div className="pt-1">{action}</div>
           </div>
         </div>
+        </TiltCard>
 
         {/* ── Footer (router-aware label) ── */}
         <div className="mt-3 text-center text-[11px] text-white/30">
