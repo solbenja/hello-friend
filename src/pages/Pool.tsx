@@ -505,6 +505,10 @@ export default function Pool() {
                 <span className="text-muted-foreground">Your LP</span>
                 <span className="num text-foreground">{(+lpBalanceFmt).toFixed(6)}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Your Pool Share</span>
+                <span className="num font-semibold text-primary">{lpShare.toFixed(4)}%</span>
+              </div>
             </div>
           )}
 
@@ -572,7 +576,8 @@ export default function Pool() {
         </div>
 
         <div className="mt-3 text-center text-[11px] text-muted-foreground num">
-          Factory <a href={`${EXPLORER_URL}/address/${DEFAULT_FACTORY}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{shortAddr(DEFAULT_FACTORY)}</a>
+          Routed via <span className="font-semibold text-primary">LiteSwap V2</span>
+          {" · "}Factory <a href={`${EXPLORER_URL}/address/${DEFAULT_FACTORY}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{shortAddr(DEFAULT_FACTORY)}</a>
           {" · "}Router <a href={`${EXPLORER_URL}/address/${DEFAULT_ROUTER}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{shortAddr(DEFAULT_ROUTER)}</a>
         </div>
       </div>

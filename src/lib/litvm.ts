@@ -20,9 +20,44 @@ export const litvmChain = defineChain({
 
 // ── Router & token addresses (own deployed AMM) ──────────────────────────────
 export const NATIVE_SENTINEL = "NATIVE";
-export const DEFAULT_FACTORY = "0xb923f1481384386D447C51051907F8CadAFF5f3E";
-export const DEFAULT_ROUTER  = "0xFa1f665C6ee5167f78454d85bc56D263D5da4576";
+
+// LiteSwap V2 (our own AMM)
+export const LITESWAP_FACTORY = "0xb923f1481384386D447C51051907F8CadAFF5f3E";
+export const LITESWAP_ROUTER  = "0xFa1f665C6ee5167f78454d85bc56D263D5da4576";
+
+// OmniFun router (existing community AMM)
+export const OMNIFUN_ROUTER   = "0xe351c47c3b96844F46e9808a7D5bBa8101BfFB57";
+
+// Back-compat aliases (existing code paths)
+export const DEFAULT_FACTORY = LITESWAP_FACTORY;
+export const DEFAULT_ROUTER  = LITESWAP_ROUTER;
+
 export const WZKLTC_ADDR     = "0x60A84eBC3483fEFB251B76Aea5B8458026Ef4bea";
+
+export type RouterKey = "liteswap" | "omnifun";
+export const ROUTERS: Record<RouterKey, { address: string; label: string; factory?: string }> = {
+  liteswap: { address: LITESWAP_ROUTER, label: "LiteSwap V2", factory: LITESWAP_FACTORY },
+  omnifun:  { address: OMNIFUN_ROUTER,  label: "OmniFun" },
+};
+
+// Token → preferred router routing rules
+const LITESWAP_TOKENS = new Set<string>([
+  "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304".toLowerCase(), // USDC (new)
+  "0x314522DD1B3f74Dd1DdE03E5B5a628C28134b25d".toLowerCase(), // zkPEPE
+  "0xaf9F497007342Dd025Ff696964A736Ec9584c3dd".toLowerCase(), // zkETH
+]);
+const OMNIFUN_TOKENS = new Set<string>([
+  "0xFC73cdB75F37B0da829c4e54511f410D525B76b2".toLowerCase(), // Lester
+  "0x6858790e164a8761a711BAD1178220C5AebcF7eC".toLowerCase(), // PEPE
+]);
+
+export function pickRouter(tokenInAddr?: string, tokenOutAddr?: string): RouterKey {
+  const a = (tokenInAddr || "").toLowerCase();
+  const b = (tokenOutAddr || "").toLowerCase();
+  if (LITESWAP_TOKENS.has(a) || LITESWAP_TOKENS.has(b)) return "liteswap";
+  if (OMNIFUN_TOKENS.has(a) || OMNIFUN_TOKENS.has(b)) return "omnifun";
+  return "liteswap";
+}
 
 // Router uses the *ZKLTC naming* (not WETH/ETH)
 export const ROUTER_ABI = [
@@ -78,9 +113,12 @@ export const WZKLTC_ABI = [
 export type Token = { address: string; symbol: string };
 
 export const POPULAR_TOKENS: Token[] = [
+  { address: "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304", symbol: "USDC" },
+  { address: "0x314522DD1B3f74Dd1DdE03E5B5a628C28134b25d", symbol: "zkPEPE" },
+  { address: "0xaf9F497007342Dd025Ff696964A736Ec9584c3dd", symbol: "zkETH" },
   { address: "0xFC73cdB75F37B0da829c4e54511f410D525B76b2", symbol: "Lester" },
   { address: "0x6858790e164a8761a711BAD1178220C5AebcF7eC", symbol: "PEPE" },
-  { address: "0xe1b51EfB42cC9748C8ecf1129705F5d27901261a", symbol: "USDC" },
+  { address: "0xe1b51EfB42cC9748C8ecf1129705F5d27901261a", symbol: "USDC.legacy" },
   { address: "0x7EDB84A49Eb4077352bd6f780130E4871DaFc5bC", symbol: "LITOAD" },
   { address: "0xF143eCFE3DFEEB4ae188cA4f1c7c7ab0b5F592eb", symbol: "LITVM" },
   { address: "0x61346d5CBF2e66fc5C9d900c25e58816cC3b4307", symbol: "YURI" },
