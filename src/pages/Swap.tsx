@@ -591,8 +591,10 @@ export default function Swap() {
 
       <div className="w-full max-w-[440px]">
 
-        {/* ── Swap Card ── */}
+        {/* ── Swap Card (with 3D tilt) ── */}
+        <TiltCard tiltLimit={6} scale={1.015} className="rounded-2xl">
         <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] shadow-2xl">
+
 
           {/* ── Top bar: Title + Icons ── */}
           <div className="flex items-center justify-between px-4 pt-4 pb-3">
