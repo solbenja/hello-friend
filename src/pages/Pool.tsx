@@ -386,13 +386,34 @@ export default function Pool() {
       setStatus({ kind: "info", msg: "Confirming…", txHash: tx.hash });
       const receipt = await tx.wait();
       const finalHash = receipt?.hash ?? tx.hash;
-      setStatus({ kind: "ok", msg: `Removed! tx ${shortAddr(finalHash)}`, txHash: finalHash });
+      setStatus({ kind: "idle", msg: "" });
+      setResultModal({
+        open: true,
+        kind: "ok",
+        title: "Liquidity Removed",
+        subtitle: "Your LP tokens have been burned.",
+        txHash: finalHash,
+        details: [
+          { label: "LP burned", value: `${(+removeAmount).toLocaleString(undefined, { maximumFractionDigits: 6 })} LP` },
+          { label: "Pair", value: `${tokenA?.symbol || "?"} / ${tokenB?.symbol || "?"}` },
+          { label: "Router", value: "LitDeX Router" },
+        ],
+      });
+      pushWalletTx({
+        hash: finalHash,
+        kind: "liquidity",
+        title: `Remove ${tokenA?.symbol || "?"}/${tokenB?.symbol || "?"} LP`,
+        subtitle: `${(+removeAmount).toFixed(4)} LP burned`,
+        time: Date.now(),
+        account: walletAddr,
+      });
       setRemoveAmount("");
       reloadPair();
       const [m1, m2] = await Promise.all([loadTokenMeta(tokenAAddr, walletAddr), loadTokenMeta(tokenBAddr, walletAddr)]);
       setTokenA(m1); setTokenB(m2);
     } catch (e) {
-      setStatus({ kind: "error", msg: "Remove failed: " + errMsg(e).slice(0, 160) });
+      setStatus({ kind: "idle", msg: "" });
+      setResultModal({ open: true, kind: "error", title: "Remove Liquidity Failed", subtitle: errMsg(e).slice(0, 200) });
     } finally { setBusy(false); }
   };
 
