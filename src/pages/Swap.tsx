@@ -25,6 +25,18 @@ const ROUTER_WRAPPED_ABI = [
   "function WETH() view returns (address)",
 ] as const;
 
+// Combined ABI supporting both LiteSwap (ZKLTC-named) and OmniFun (ETH-named) swap functions
+const ROUTER_SWAP_ABI = [
+  "function getAmountsOut(uint amountIn, address[] path) view returns (uint[] amounts)",
+  "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)",
+  // LiteSwap (ZKLTC) variants
+  "function swapExactZKLTCForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)",
+  "function swapExactTokensForZKLTC(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)",
+  // OmniFun (ETH) variants
+  "function swapExactETHForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)",
+  "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)",
+] as const;
+
 type TokenMeta = { address: string; symbol: string; decimals: number; balance: string };
 type Status = { kind: "idle" | "info" | "ok" | "error"; msg: string; txHash?: string };
 
