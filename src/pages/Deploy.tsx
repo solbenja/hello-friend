@@ -594,7 +594,7 @@ export default function Deploy() {
                         type="button"
                         onClick={() => update(f.key, !form[f.key])}
                         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                          form[f.key] ? "bg-blue-600" : "bg-white/10 border border-white/10"
+                          form[f.key] ? "bg-teal-500" : "bg-white/10 border border-white/10"
                         }`}
                       >
                         <span
@@ -669,7 +669,7 @@ export default function Deploy() {
                   </div>
 
                   {/* Fee section */}
-                  <div className="flex items-center justify-between rounded-xl border border-teal-500/30 bg-blue-600/10 p-4">
+                  <div className="flex items-center justify-between rounded-xl border border-teal-500/30 bg-teal-600/10 p-4">
                     <div>
                       <div className="text-xs text-white/40">Deployment Fee</div>
                       <div className="font-display text-xl text-teal-400">{deployFee} zkLTC</div>
