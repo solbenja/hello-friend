@@ -74,7 +74,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="leading-tight">
               <div className="font-display text-lg font-bold text-gradient-aurora">LitDeX</div>
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">DeFi · v2</div>
+              
             </div>
           )}
         </div>
