@@ -589,7 +589,7 @@ export default function Pool() {
         </div>
 
         <div className="mt-3 text-center text-[11px] text-muted-foreground num">
-          Routed via <span className="font-semibold text-primary">LiteSwap V2</span>
+          Routed via <span className="font-semibold text-primary">LitDeX Router</span>
           {" · "}Factory <a href={`${EXPLORER_URL}/address/${DEFAULT_FACTORY}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{shortAddr(DEFAULT_FACTORY)}</a>
           {" · "}Router <a href={`${EXPLORER_URL}/address/${DEFAULT_ROUTER}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{shortAddr(DEFAULT_ROUTER)}</a>
         </div>
