@@ -382,6 +382,7 @@ export default function Deploy() {
         tx: tx.hash,
         tokenAddr,
       });
+      setShowModal(false);
       setResultModal({
         open: true,
         kind: "ok",
@@ -409,6 +410,7 @@ export default function Deploy() {
       setRefreshKey((k) => k + 1);
     } catch (e) {
       setStatus({ kind: "error", msg: errMsg(e) });
+      setShowModal(false);
       setResultModal({ open: true, kind: "error", title: "Deploy Failed", subtitle: errMsg(e).slice(0, 200) });
     } finally {
       setBusy(false);
