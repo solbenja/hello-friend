@@ -30,6 +30,9 @@ import {
 import { errMsg, shortAddr, EXPLORER_URL } from "@/lib/litvm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { TiltCard } from "@/components/TiltCard";
+import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type Status =
   | { kind: "idle" }
