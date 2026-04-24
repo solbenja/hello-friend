@@ -237,6 +237,9 @@ export default function Deploy() {
   const [myTokens, setMyTokens] = useState<TokenInfo[]>([]);
   const [allTokens, setAllTokens] = useState<TokenInfo[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [resultModal, setResultModal] = useState<{
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
+  }>({ open: false, kind: "ok", title: "" });
 
   const onLitVM = chainId === TOKEN_FACTORY_CHAIN_ID;
 
@@ -379,12 +382,34 @@ export default function Deploy() {
         tx: tx.hash,
         tokenAddr,
       });
+      setResultModal({
+        open: true,
+        kind: "ok",
+        title: "Token Deployed",
+        subtitle: `${form.symbol} is live on LitVM testnet.`,
+        txHash: tx.hash,
+        details: [
+          { label: "Name", value: form.name },
+          { label: "Symbol", value: form.symbol },
+          { label: "Supply", value: Number(form.totalSupply).toLocaleString() },
+          ...(tokenAddr ? [{ label: "Contract", value: tokenAddr, addressLink: true } as TxResultDetail] : []),
+        ],
+      });
+      pushWalletTx({
+        hash: tx.hash,
+        kind: "deploy",
+        title: `Deployed ${form.symbol} (ERC-20)`,
+        subtitle: `${form.name} · ${Number(form.totalSupply).toLocaleString()} supply`,
+        time: Date.now(),
+        account: address,
+      });
       toast({ title: "Token deployed!", description: `${form.symbol} live on LitVM` });
       setForm(DEFAULT_FORM);
       setStep(1);
       setRefreshKey((k) => k + 1);
     } catch (e) {
       setStatus({ kind: "error", msg: errMsg(e) });
+      setResultModal({ open: true, kind: "error", title: "Deploy Failed", subtitle: errMsg(e).slice(0, 200) });
     } finally {
       setBusy(false);
     }
