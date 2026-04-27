@@ -42,9 +42,18 @@ export const ROUTERS: Record<RouterKey, { address: string; label: string; factor
 
 // Token → preferred router routing rules
 const LITESWAP_TOKENS = new Set<string>([
-  "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304".toLowerCase(), // USDC (new)
+  "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304".toLowerCase(), // USDC (existing)
   "0x314522DD1B3f74Dd1DdE03E5B5a628C28134b25d".toLowerCase(), // zkPEPE
   "0xaf9F497007342Dd025Ff696964A736Ec9584c3dd".toLowerCase(), // zkETH
+  // New LiteSwap tokens
+  "0xBAaba603e6298fbb76325a6B0d47Cd57154ca641".toLowerCase(), // LDEX
+  "0xF425553A84e579BE353a6180F7d53d8101bfb3E4".toLowerCase(), // LDTOAD
+  "0x60DD65bAd8a73Dfd8DF029C4e3b372d575B03BC2".toLowerCase(), // USDC (test)
+  "0xa38c318a0B755154b25f28cAD7b2312747B073C6".toLowerCase(), // USDT
+  "0x68Bf11e64cfD939fE1761012862FBFE47048118e".toLowerCase(), // WETH
+  "0xcFe6BE457D366329CCdeE7fBC48aBf1d6FFeB9C0".toLowerCase(), // WBTC
+  "0xd8C4e6dBe48472d6C563eB1cc330207d020D4c8f".toLowerCase(), // YURI
+  "0x05149f41AFE7ca712D6A42390e8047E0f2887284".toLowerCase(), // CHAWLEE
 ]);
 const OMNIFUN_TOKENS = new Set<string>([
   "0xFC73cdB75F37B0da829c4e54511f410D525B76b2".toLowerCase(), // Lester
@@ -110,27 +119,29 @@ export const WZKLTC_ABI = [
   "function allowance(address src, address guy) view returns (uint256)",
 ] as const;
 
-export type Token = { address: string; symbol: string };
+export type Token = { address: string; symbol: string; image?: string };
 
 export const POPULAR_TOKENS: Token[] = [
-  { address: "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304", symbol: "USDC" },
-  { address: "0x314522DD1B3f74Dd1DdE03E5B5a628C28134b25d", symbol: "zkPEPE" },
-  { address: "0xaf9F497007342Dd025Ff696964A736Ec9584c3dd", symbol: "zkETH" },
-  { address: "0xFC73cdB75F37B0da829c4e54511f410D525B76b2", symbol: "Lester" },
-  { address: "0x6858790e164a8761a711BAD1178220C5AebcF7eC", symbol: "PEPE" },
-  { address: "0xe1b51EfB42cC9748C8ecf1129705F5d27901261a", symbol: "USDC.legacy" },
-  { address: "0x7EDB84A49Eb4077352bd6f780130E4871DaFc5bC", symbol: "LITOAD" },
-  { address: "0xF143eCFE3DFEEB4ae188cA4f1c7c7ab0b5F592eb", symbol: "LITVM" },
-  { address: "0x61346d5CBF2e66fc5C9d900c25e58816cC3b4307", symbol: "YURI" },
-  { address: "0xFF8355941ADC15418cA6Ad48c0A03016C40Bb79a", symbol: "CHAWLEE" },
-  { address: "0x4af16CFB61FE9a2C6D1452d85B25e7Ca49748f16", symbol: "USDT" },
-  { address: "0xdaF8BDC2b197C2f0fAb9d7359bdF482F8332b21f", symbol: "WETH" },
-  { address: "0x3bCE48A3b30414176e796Af997Bb1Ed5E1dC5B22", symbol: "WBTC" },
+  // Existing tokens (kept as-is)
+  { address: "0xFC43ABE529CDC61B7F0aa2e677451AFd83d2B304", symbol: "USDC", image: "/logos/usdc.jpg" },
+  { address: "0x314522DD1B3f74Dd1DdE03E5B5a628C28134b25d", symbol: "zkPEPE", image: "/logos/zkpepe.jpg" },
+  { address: "0xaf9F497007342Dd025Ff696964A736Ec9584c3dd", symbol: "zkETH", image: "/logos/zketh.jpg" },
+  { address: "0xFC73cdB75F37B0da829c4e54511f410D525B76b2", symbol: "Lester", image: "/logos/lester.jpg" },
+  { address: "0x6858790e164a8761a711BAD1178220C5AebcF7eC", symbol: "PEPE", image: "/logos/pepe.jpg" },
+  // New LiteSwap tokens
+  { address: "0xBAaba603e6298fbb76325a6B0d47Cd57154ca641", symbol: "LDEX", image: "/logos/litdex.png" },
+  { address: "0xF425553A84e579BE353a6180F7d53d8101bfb3E4", symbol: "LDTOAD", image: "/logos/litoad.jpg" },
+  { address: "0x60DD65bAd8a73Dfd8DF029C4e3b372d575B03BC2", symbol: "USDC.t", image: "/logos/usdc.jpg" },
+  { address: "0xa38c318a0B755154b25f28cAD7b2312747B073C6", symbol: "USDT", image: "/logos/usdt.jpg" },
+  { address: "0x68Bf11e64cfD939fE1761012862FBFE47048118e", symbol: "WETH", image: "/logos/weth.jpg" },
+  { address: "0xcFe6BE457D366329CCdeE7fBC48aBf1d6FFeB9C0", symbol: "WBTC", image: "/logos/wbtc.jpg" },
+  { address: "0xd8C4e6dBe48472d6C563eB1cc330207d020D4c8f", symbol: "YURI", image: "/logos/yuri.jpg" },
+  { address: "0x05149f41AFE7ca712D6A42390e8047E0f2887284", symbol: "CHAWLEE", image: "/logos/chawlee.jpg" },
 ];
 
 // Native + ERC-20 list for the swap selector
 export const SWAP_TOKENS: Token[] = [
-  { address: NATIVE_SENTINEL, symbol: "zkLTC" },
+  { address: NATIVE_SENTINEL, symbol: "zkLTC", image: "/logos/zkltc.jpg" },
   ...POPULAR_TOKENS,
 ];
 

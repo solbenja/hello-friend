@@ -65,7 +65,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-glow-violet">
             <img
-              src="https://raw.githubusercontent.com/0xluciferxhilde/your-friendly-assistant/main/public/logos/litvm.jpg"
+              src="/logos/litdex.png"
               alt="LitDeX"
               className="h-full w-full object-cover"
             />
