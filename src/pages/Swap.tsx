@@ -367,10 +367,11 @@ export default function Swap() {
       setStatus({ kind: "error", msg: "Cannot swap same token." });
       return;
     }
+    const path = buildSwapPath(tokenInAddr, tokenOutAddr, wethAddr);
     try {
       const router = new Contract(routerAddr, ROUTER_SWAP_ABI, readProvider);
       const inWei = parseUnits(amountIn, tokenIn.decimals);
-      const amounts = (await router.getAmountsOut(inWei, [inA, outA])) as bigint[];
+      const amounts = (await router.getAmountsOut(inWei, path)) as bigint[];
       setAmountOut(formatUnits(amounts[amounts.length - 1], tokenOut.decimals));
       setStatus({ kind: "idle", msg: "" });
     } catch (e) {
