@@ -42,18 +42,18 @@ export function TiltCard({
   const [isHovered, setIsHovered] = useState(false);
   const [enabled, setEnabled] = useState(true);
 
-  // Disable on touch / small viewports / reduced-motion preference.
+  // Disabled only when user prefers reduced motion. Tilt now active on
+  // touch + mobile too (per user request).
   useEffect(() => {
     const check = () => {
       if (typeof window === "undefined") return;
-      const small = window.matchMedia("(max-width: 768px)").matches;
-      const coarse = window.matchMedia("(pointer: coarse)").matches;
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      setEnabled(!(small || coarse || reduce));
+      setEnabled(!reduce);
     };
     check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    mq.addEventListener?.("change", check);
+    return () => mq.removeEventListener?.("change", check);
   }, []);
 
   const dir = effect === "evade" ? -1 : 1;

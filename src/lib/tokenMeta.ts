@@ -82,6 +82,40 @@ const REGISTRY: Record<string, Meta> = {
     symbol: "WBTC",
     logo: `${LOGO_BASE}/wbtc.jpg`,
   },
+
+  // ── New LiteSwap-routed tokens (local /logos/) ──
+  "0xbaaba603e6298fbb76325a6b0d47cd57154ca641": {
+    symbol: "LDEX",
+    logo: "/logos/litdex.png",
+  },
+  "0xf425553a84e579be353a6180f7d53d8101bfb3e4": {
+    symbol: "LDTOAD",
+    logo: "/logos/litoad.jpg",
+  },
+  "0x60dd65bad8a73dfd8df029c4e3b372d575b03bc2": {
+    symbol: "USDC.t",
+    logo: "/logos/usdc.jpg",
+  },
+  "0xa38c318a0b755154b25f28cad7b2312747b073c6": {
+    symbol: "USDT",
+    logo: "/logos/usdt.jpg",
+  },
+  "0x68bf11e64cfd939fe1761012862fbfe47048118e": {
+    symbol: "WETH",
+    logo: "/logos/weth.jpg",
+  },
+  "0xcfe6be457d366329ccdee7fbc48abf1d6ffeb9c0": {
+    symbol: "WBTC",
+    logo: "/logos/wbtc.jpg",
+  },
+  "0xd8c4e6dbe48472d6c563eb1cc330207d020d4c8f": {
+    symbol: "YURI",
+    logo: "/logos/yuri.jpg",
+  },
+  "0x05149f41afe7ca712d6a42390e8047e0f2887284": {
+    symbol: "CHAWLEE",
+    logo: "/logos/chawlee.jpg",
+  },
 };
 
 // Symbol-based fallback (case-insensitive) for tokens not in REGISTRY by address.
@@ -89,6 +123,7 @@ const SYMBOL_LOGOS: Record<string, string> = {
   zkltc: `${LOGO_BASE}/zkltc.jpg`,
   usdc: `${LOGO_BASE}/usdc.jpg`,
   "usdc.legacy": `${LOGO_BASE}/usdclegacy.jpg`,
+  "usdc.t": "/logos/usdc.jpg",
   usdt: `${LOGO_BASE}/usdt.jpg`,
   zketh: `${LOGO_BASE}/zketh.jpg`,
   zkpepe: `${LOGO_BASE}/zkpepe.jpg`,
@@ -96,7 +131,10 @@ const SYMBOL_LOGOS: Record<string, string> = {
   lester: `${LOGO_BASE}/lester.jpg`,
   chawlee: `${LOGO_BASE}/chawlee.jpg`,
   litoad: `${LOGO_BASE}/litoad.jpg`,
+  ldtoad: "/logos/litoad.jpg",
   litvm: `${LOGO_BASE}/litvm.jpg`,
+  ldex: "/logos/litdex.png",
+  litdex: "/logos/litdex.png",
   yuri: `${LOGO_BASE}/yuri.jpg`,
   weth: `${LOGO_BASE}/weth.jpg`,
   wbtc: `${LOGO_BASE}/wbtc.jpg`,
