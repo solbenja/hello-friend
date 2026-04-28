@@ -16,6 +16,10 @@ import Ecosystem from "./pages/Ecosystem";
 import Parameters from "./pages/Parameters";
 import Deploy from "./pages/Deploy";
 import Forge from "./pages/Forge";
+import WorldMap from "./pages/litland/WorldMap";
+import MyPlot from "./pages/litland/MyPlot";
+import Marketplace from "./pages/litland/Marketplace";
+import NFTs from "./pages/litland/NFTs";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -38,6 +42,10 @@ const App = () => (
           <Route path="/parameters" element={<Parameters />} />
           <Route path="/deploy" element={<Deploy />} />
           <Route path="/forge" element={<Forge />} />
+          <Route path="/litland" element={<WorldMap />} />
+          <Route path="/litland/my-plot" element={<MyPlot />} />
+          <Route path="/litland/marketplace" element={<Marketplace />} />
+          <Route path="/litland/nfts" element={<NFTs />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
