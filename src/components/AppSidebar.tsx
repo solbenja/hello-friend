@@ -124,6 +124,37 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Games (LitLand) */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-2 text-[10px] font-semibold tracking-[0.25em] text-muted-foreground/70">
+            <span className="inline-flex items-center gap-1.5"><Gamepad2 className="h-3 w-3" /> Games · LitLand</span>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {gameItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className="group relative h-10 rounded-xl transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:bg-sidebar-accent"
+                    >
+                      <RouterNavLink to={item.url} end>
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-violet shadow-glow-violet" />
+                        )}
+                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                        <span>{item.title}</span>
+                      </RouterNavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-[10px] font-semibold tracking-[0.25em] text-muted-foreground/70">
             Explorer
