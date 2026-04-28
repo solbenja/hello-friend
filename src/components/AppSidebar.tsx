@@ -28,6 +28,11 @@ import {
   Sparkles,
   Hammer,
   Droplets,
+  Map as MapIcon,
+  Castle,
+  Store,
+  ImageIcon,
+  Gamepad2,
 } from "lucide-react";
 
 const explorerItems = [
@@ -47,6 +52,13 @@ const chainItems = [
   { title: "Terminal", url: "/terminal", icon: Zap },
   { title: "Ecosystem", url: "/ecosystem", icon: Compass },
   { title: "Parameters", url: "/parameters", icon: Shield },
+];
+
+const gameItems = [
+  { title: "World Map", url: "/litland", icon: MapIcon },
+  { title: "My Plot", url: "/litland/my-plot", icon: Castle },
+  { title: "Marketplace", url: "/litland/marketplace", icon: Store },
+  { title: "NFTs", url: "/litland/nfts", icon: ImageIcon },
 ];
 
 const litvmItems = [
