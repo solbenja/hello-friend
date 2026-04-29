@@ -30,7 +30,6 @@ import {
   Droplets,
   Trophy,
   CalendarCheck,
-  Sparkles,
 } from "lucide-react";
 
 const explorerItems = [
