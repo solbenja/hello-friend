@@ -14,6 +14,7 @@ import {
   recordAction,
   registerReferral,
 } from "@/lib/points";
+import { useLocalPoints, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 
 function StatPill({ label, value }: { label: string; value: string | number }) {
   return (
@@ -43,6 +44,7 @@ function fmtCountdown(ms: number) {
 
 export default function Rewards() {
   const { address, isConnected } = useAccount();
+  const localPoints = useLocalPoints(address);
   const [total, setTotal] = useState<bigint>(0n);
   const [daily, setDaily] = useState<bigint>(0n);
   const [pending, setPending] = useState<bigint>(0n);
@@ -153,6 +155,8 @@ export default function Rewards() {
             </div>
             <div className="flex flex-wrap gap-2.5">
               <StatPill label="Daily" value={`${dailyNum} / ${DAILY_POINTS_CAP}`} />
+              <StatPill label="Today (Local)" value={`${localPoints.today} / ${LOCAL_DAILY_CAP}`} />
+              <StatPill label="Lifetime (Local)" value={localPoints.total} />
               <StatPill label="Pending Referral" value={pending.toString()} />
               <StatPill label="Referrals" value={refs.length} />
             </div>
