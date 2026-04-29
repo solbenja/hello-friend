@@ -24,6 +24,23 @@ function StatPill({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+/** Time remaining until next 00:00 IST (UTC+5:30) */
+function nextIstMidnightMs() {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000);
+  const ist = new Date(istNow);
+  ist.setUTCHours(0, 0, 0, 0);
+  ist.setUTCDate(ist.getUTCDate() + 1);
+  return ist.getTime() - (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000;
+}
+function fmtCountdown(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
 export default function Rewards() {
   const { address, isConnected } = useAccount();
   const [total, setTotal] = useState<bigint>(0n);
