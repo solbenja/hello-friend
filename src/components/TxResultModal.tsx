@@ -141,6 +141,8 @@ export function TxResultModal({
           </div>
         ) : null}
 
+        {ok && footerSlot}
+
         <div className="mt-5 grid grid-cols-1 gap-2">
           {primaryAction && (
             <button
@@ -158,6 +160,7 @@ export function TxResultModal({
           </button>
         </div>
       </div>
+      </TiltCard>
     </div>
   );
 }
