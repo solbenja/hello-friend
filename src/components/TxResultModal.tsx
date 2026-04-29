@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle, ExternalLink, X, Copy } from "lucide-react";
 import { EXPLORER_URL, shortAddr } from "@/lib/litvm";
 import { toast } from "@/hooks/use-toast";
+import { TiltCard } from "@/components/TiltCard";
 
 export type TxResultKind = "ok" | "error";
 
@@ -28,6 +29,8 @@ export interface TxResultModalProps {
   details?: TxResultDetail[];
   /** Optional primary action button (besides Close). */
   primaryAction?: { label: string; onClick: () => void };
+  /** Optional extra content rendered below the details (e.g. points earned). */
+  footerSlot?: React.ReactNode;
 }
 
 function copyText(value: string) {
@@ -48,6 +51,7 @@ export function TxResultModal({
   txHash,
   details,
   primaryAction,
+  footerSlot,
 }: TxResultModalProps) {
   if (!open) return null;
   const ok = kind === "ok";
@@ -57,8 +61,16 @@ export function TxResultModal({
       className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4 backdrop-blur-md animate-fade-in"
       onClick={onClose}
     >
+      <TiltCard
+        tiltLimit={8}
+        scale={1}
+        perspective={1000}
+        effect="gravitate"
+        spotlight
+        className="w-full max-w-md"
+      >
       <div
-        className="relative w-full max-w-md panel-elevated p-6 animate-scale-in"
+        className="relative w-full panel-elevated p-6 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         <button
