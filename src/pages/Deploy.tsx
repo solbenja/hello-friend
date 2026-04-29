@@ -724,6 +724,8 @@ export default function Deploy() {
                     Deploy Token
                   </button>
 
+                  <PointsPreview kind="deploy" verb="Deploying" />
+
                   <div className="text-center text-[11px] text-white/30">
                     A non-refundable deployment fee of {deployFee} zkLTC will be charged on confirmation.
                   </div>
