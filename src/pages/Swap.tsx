@@ -22,6 +22,8 @@ import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 
 // Some routers expose WZKLTC(), others WETH(). Try both, fallback to constant.
 const ROUTER_WRAPPED_ABI = [
