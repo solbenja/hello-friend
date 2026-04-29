@@ -62,13 +62,26 @@ export default function Checkin() {
   const checkedInToday = lastDay > 0n && lastDay === currentDay;
   const countdown = useMemo(() => fmtCountdown(nextIstMidnightMs() - now), [now]);
 
-  // Build 7-day streak visualization (last N days from current)
+  // Build Mon..Sun week. Today's column is highlighted.
+  // todayIdx: 0=Mon..6=Sun (JS getDay: 0=Sun..6=Sat → map)
+  const jsDay = new Date().getDay();
+  const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
   const streakNum = Number(streak);
-  const week = Array.from({ length: 7 }, (_, i) => {
-    // i=0 oldest .. i=6 today
-    const dayOffset = 6 - i;
-    const ok = streakNum > dayOffset;
-    return ok;
+
+  // For each weekday slot (0..6), determine state:
+  //  - "future"   : after today
+  //  - "today"    : today's column (checked or not)
+  //  - "done"     : past day covered by current streak
+  //  - "missed"   : past day not covered by streak
+  type DayState = "future" | "today-pending" | "today-done" | "done" | "missed";
+  const week: DayState[] = Array.from({ length: 7 }, (_, i) => {
+    if (i > todayIdx) return "future";
+    if (i === todayIdx) return checkedInToday ? "today-done" : "today-pending";
+    // past day in this week — count days back from today
+    const daysBack = todayIdx - i;
+    // streak includes today if checked. Days covered going back = streakNum - (checkedInToday ? 1 : 0)
+    const pastCovered = streakNum - (checkedInToday ? 1 : 0);
+    return daysBack <= pastCovered ? "done" : "missed";
   });
 
   // Sunday bonus is unknown without contract getter; show informational
@@ -77,8 +90,13 @@ export default function Checkin() {
   const onCheckin = async () => {
     setBusy(true);
     try {
+      const isSunday = new Date().getDay() === 0;
+      const ldexAmt = (() => { try { return formatUnits(nextLDEX, 18); } catch { return "0"; } })();
       const hash = await checkinToday();
-      toast.success("Checked in!", { description: shortAddr(hash) });
+      toast.success(`✅ Checked in! You earned ${(+ldexAmt).toLocaleString(undefined, { maximumFractionDigits: 4 })} LDEX`, {
+        description: shortAddr(hash),
+      });
+      if (isSunday) toast.success("🎉 Sunday Bonus! +zkLTC reward unlocked");
       refresh();
     } catch (e) {
       toast.error("Check-in failed", { description: errMsg(e).slice(0, 140) });
@@ -130,22 +148,38 @@ export default function Checkin() {
             </div>
           </div>
 
-          {/* 7-day calendar */}
+          {/* 7-day calendar (Mon → Sun) */}
           <div className="mt-6 grid grid-cols-7 gap-2">
-            {week.map((ok, i) => (
-              <div
-                key={i}
-                className={`flex h-20 flex-col items-center justify-center gap-1 rounded-xl border ${
-                  ok ? "border-teal-500/40 bg-teal-500/10" : "border-white/[0.07] bg-white/[0.02]"
-                }`}
-              >
-                <div className="text-[10px] uppercase tracking-wider text-white/40">{DAY_NAMES[i]}</div>
-                {ok ? <Check className="h-5 w-5 text-teal-400" /> : <X className="h-5 w-5 text-white/20" />}
-              </div>
-            ))}
+            {week.map((state, i) => {
+              const isToday = state === "today-pending" || state === "today-done";
+              const borderCls =
+                isToday
+                  ? "border-teal-500/70 bg-teal-500/10 ring-2 ring-teal-500/30"
+                  : state === "done"
+                  ? "border-teal-500/40 bg-teal-500/5"
+                  : state === "missed"
+                  ? "border-red-500/30 bg-red-500/5"
+                  : "border-white/[0.07] bg-white/[0.02]";
+              return (
+                <div
+                  key={i}
+                  className={`flex h-20 flex-col items-center justify-center gap-1 rounded-xl border ${borderCls}`}
+                >
+                  <div className={`text-[10px] uppercase tracking-wider ${isToday ? "text-teal-300" : "text-white/40"}`}>
+                    {DAY_NAMES[i]}
+                  </div>
+                  {state === "today-done" && <Check className="h-5 w-5 text-teal-400" />}
+                  {state === "today-pending" && <div className="h-4 w-4 rounded-full border-2 border-teal-400/70" />}
+                  {state === "done" && <Check className="h-5 w-5 text-teal-400" />}
+                  {state === "missed" && <X className="h-5 w-5 text-red-400/70" />}
+                  {state === "future" && <div className="h-4 w-4 rounded-full bg-white/5" />}
+                  {isToday && <div className="text-[9px] font-semibold uppercase tracking-wider text-teal-300">Today</div>}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Action */}
+          {/* Inline action */}
           <div className="mt-6">
             {!isConnected ? (
               <button disabled className="h-14 w-full rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white/40">
@@ -169,6 +203,27 @@ export default function Checkin() {
           </div>
         </div>
       </TiltCard>
+
+      {/* Floating Check-In button (bottom-right) */}
+      {isConnected && (
+        <button
+          onClick={checkedInToday ? undefined : onCheckin}
+          disabled={busy || checkedInToday}
+          aria-label="Check in today"
+          className={`fixed bottom-6 right-6 z-40 inline-flex items-center gap-2.5 rounded-2xl px-8 py-4 text-sm font-bold shadow-2xl shadow-black/50 transition-all ${
+            checkedInToday
+              ? "cursor-not-allowed bg-white/10 text-white/40"
+              : "bg-[#4FD1C5] text-[#0d1117] hover:scale-105 hover:bg-[#5fdccf]"
+          }`}
+        >
+          {busy ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <CalendarCheck className="h-5 w-5" />
+          )}
+          <span>{checkedInToday ? "✓ Checked In" : "Check In Today"}</span>
+        </button>
+      )}
     </div>
   );
 }

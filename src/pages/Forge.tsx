@@ -49,8 +49,6 @@ import {
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
-import { autoRecord } from "@/lib/points";
-import { toast as sonnerToast } from "sonner";
 
 type DeployStatus =
   | { kind: "idle" }
@@ -689,8 +687,6 @@ export default function Forge() {
       });
       toast({ title: "Contract deployed 🚀", description: `Live at ${shortAddr(deployedAddr)}` });
       loadMine();
-      // Auto-record +3 pts (deploy) silent best-effort
-      autoRecord("deploy").then((h) => { if (h) sonnerToast.success("+3 pts recorded"); });
     } catch (e) {
       const err = e as { shortMessage?: string; message?: string };
       const msg = err?.shortMessage || err?.message || String(e);

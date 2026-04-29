@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ArrowLeftRight, Copy, Droplets, ExternalLink, Loader2, Rocket, Trophy, Users, Gift } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeftRight, Copy, Droplets, ExternalLink, Loader2, Rocket, Trophy, Users, Gift, Clock } from "lucide-react";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
 import { TiltCard } from "@/components/TiltCard";
@@ -22,6 +22,23 @@ function StatPill({ label, value }: { label: string; value: string | number }) {
       <div className="mt-0.5 font-display text-lg text-white">{value}</div>
     </div>
   );
+}
+
+/** Time remaining until next 00:00 IST (UTC+5:30) */
+function nextIstMidnightMs() {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000);
+  const ist = new Date(istNow);
+  ist.setUTCHours(0, 0, 0, 0);
+  ist.setUTCDate(ist.getUTCDate() + 1);
+  return ist.getTime() - (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000;
+}
+function fmtCountdown(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
 export default function Rewards() {
@@ -92,6 +109,15 @@ export default function Rewards() {
   const refLink = address ? `${window.location.origin}/swap?ref=${address}` : "";
   const dailyNum = Number(daily);
   const pct = Math.min(100, (dailyNum / DAILY_POINTS_CAP) * 100);
+  const capReached = dailyNum >= DAILY_POINTS_CAP;
+
+  // Live IST countdown
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const countdown = useMemo(() => fmtCountdown(nextIstMidnightMs() - now), [now]);
 
   return (
     <div className="space-y-8">
@@ -142,41 +168,54 @@ export default function Rewards() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <ActionBtn
-              icon={<ArrowLeftRight className="h-4 w-4" />}
-              label="Record Swap"
-              sub="+1 pt"
-              loading={busy === "swap"}
-              disabled={!isConnected || !!busy}
-              onClick={() => action("swap")}
-            />
-            <ActionBtn
-              icon={<Droplets className="h-4 w-4" />}
-              label="Record LP"
-              sub="+2 pts"
-              loading={busy === "lp"}
-              disabled={!isConnected || !!busy}
-              onClick={() => action("lp")}
-            />
-            <ActionBtn
-              icon={<Rocket className="h-4 w-4" />}
-              label="Record Deploy"
-              sub="+3 pts"
-              loading={busy === "deploy"}
-              disabled={!isConnected || !!busy}
-              onClick={() => action("deploy")}
-            />
-            <ActionBtn
-              icon={<Gift className="h-4 w-4" />}
-              label="Claim Referral"
-              sub={`${pending.toString()} pts pending`}
-              loading={busy === "claim"}
-              disabled={!isConnected || !!busy || pending === 0n}
-              onClick={claim}
-              accent
-            />
-          </div>
+          {capReached ? (
+            <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-orange-500/40 bg-orange-500/10 p-5 text-center">
+              <Clock className="h-6 w-6 text-orange-300" />
+              <div className="font-display text-base text-white">
+                Daily limit reached ({DAILY_POINTS_CAP}/{DAILY_POINTS_CAP} pts)
+              </div>
+              <div className="font-mono text-xs text-white/60">Resets in {countdown} (00:00 IST)</div>
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 text-[11px] text-white/40">{dailyNum}/{DAILY_POINTS_CAP} points used today · resets in <span className="font-mono text-white/60">{countdown}</span></div>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <ActionBtn
+                  icon={<ArrowLeftRight className="h-4 w-4" />}
+                  label="Record Swap"
+                  sub="+1 pt"
+                  loading={busy === "swap"}
+                  disabled={!isConnected || !!busy}
+                  onClick={() => action("swap")}
+                />
+                <ActionBtn
+                  icon={<Droplets className="h-4 w-4" />}
+                  label="Record LP"
+                  sub="+2 pts"
+                  loading={busy === "lp"}
+                  disabled={!isConnected || !!busy}
+                  onClick={() => action("lp")}
+                />
+                <ActionBtn
+                  icon={<Rocket className="h-4 w-4" />}
+                  label="Record Deploy"
+                  sub="+3 pts"
+                  loading={busy === "deploy"}
+                  disabled={!isConnected || !!busy}
+                  onClick={() => action("deploy")}
+                />
+                <ActionBtn
+                  icon={<Gift className="h-4 w-4" />}
+                  label="Claim Referral"
+                  sub={`${pending.toString()} pts pending`}
+                  loading={busy === "claim"}
+                  disabled={!isConnected || !!busy || pending === 0n}
+                  onClick={claim}
+                  accent
+                />
+              </div>
+            </>
+          )}
         </div>
       </TiltCard>
 
