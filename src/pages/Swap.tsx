@@ -303,7 +303,7 @@ export default function Swap() {
 
   // Result modal (final OK / error)
   const [resultModal, setResultModal] = useState<{
-    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[]; earnedNote?: string;
   }>({ open: false, kind: "ok", title: "" });
   const localPoints = useLocalPoints(walletAddr);
 
@@ -815,6 +815,7 @@ export default function Swap() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        earnedNote={resultModal.earnedNote}
       />
     </div>
   );
