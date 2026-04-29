@@ -48,6 +48,7 @@ import {
 } from "@/lib/forgeTemplates";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { awardPoints, useLocalPoints, POINTS_PER_KIND, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type DeployStatus =
@@ -501,7 +502,7 @@ export default function Forge() {
   const [showDeploy, setShowDeploy] = useState(false);
   const [myContracts, setMyContracts] = useState<Array<{ address: `0x${string}`; type: number; label: string; deployedAt: number }>>([]);
   const [resultModal, setResultModal] = useState<{
-    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[]; earnedNote?: string;
   }>({ open: false, kind: "ok", title: "" });
 
   const { address, isConnected } = useAccount();
