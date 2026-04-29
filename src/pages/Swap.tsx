@@ -301,6 +301,7 @@ export default function Swap() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({});
   const quoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { recordSilent } = usePoints();
 
   // Result modal (final OK / error)
   const [resultModal, setResultModal] = useState<{
