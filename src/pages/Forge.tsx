@@ -506,6 +506,7 @@ export default function Forge() {
   }>({ open: false, kind: "ok", title: "" });
 
   const { address, isConnected } = useAccount();
+  const localPoints = useLocalPoints(address);
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
@@ -666,6 +667,8 @@ export default function Forge() {
       if (!deployedAddr) throw new Error("Deployment confirmed but contract address not found in logs.");
       setDeploy({ kind: "ok", tx: hash, address: deployedAddr });
       setShowDeploy(false);
+      const earned = awardPoints(address, "deploy");
+      const afterToday = localPoints.today + earned;
       setResultModal({
         open: true,
         kind: "ok",
@@ -677,6 +680,7 @@ export default function Forge() {
           { label: "Name", value: contractName },
           { label: "Contract", value: deployedAddr, addressLink: true },
         ],
+        earnedNote: earned > 0 ? `+${earned} Points Earned! (${afterToday}/${LOCAL_DAILY_CAP} today)` : undefined,
       });
       pushWalletTx({
         hash,
@@ -810,6 +814,11 @@ export default function Forge() {
             {isFactoryTab ? "Generate & Download" : `Deploy (${feeEther} ${LITVM_FACTORY_NATIVE_SYMBOL})`}
           </button>
         </div>
+        {!isFactoryTab && !localPoints.capReached && (
+          <div className="mt-3 text-center text-xs text-teal-400">
+            ⚡ Deploying earns +{POINTS_PER_KIND.deploy} points ({localPoints.today}/{LOCAL_DAILY_CAP} today)
+          </div>
+        )}
       </div>
       </TiltCard>
 
@@ -937,6 +946,7 @@ export default function Forge() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        earnedNote={resultModal.earnedNote}
       />
     </div>
   );
