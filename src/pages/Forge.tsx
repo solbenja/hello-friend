@@ -510,6 +510,7 @@ export default function Forge() {
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
+  const { recordSilent } = usePoints();
   const publicClient = usePublicClient({ chainId: LITVM_CHAIN_ID });
 
   const { data: feeWei } = useReadContract({
@@ -688,6 +689,8 @@ export default function Forge() {
         account: address,
       });
       toast({ title: "Contract deployed 🚀", description: `Live at ${shortAddr(deployedAddr)}` });
+      // Auto-record points (silent)
+      recordSilent("deploy");
       loadMine();
     } catch (e) {
       const err = e as { shortMessage?: string; message?: string };
@@ -938,6 +941,7 @@ export default function Forge() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Contract Deployed" ? <PointsEarned kind="deploy" /> : undefined}
       />
     </div>
   );
