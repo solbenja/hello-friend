@@ -62,13 +62,26 @@ export default function Checkin() {
   const checkedInToday = lastDay > 0n && lastDay === currentDay;
   const countdown = useMemo(() => fmtCountdown(nextIstMidnightMs() - now), [now]);
 
-  // Build 7-day streak visualization (last N days from current)
+  // Build Mon..Sun week. Today's column is highlighted.
+  // todayIdx: 0=Mon..6=Sun (JS getDay: 0=Sun..6=Sat → map)
+  const jsDay = new Date().getDay();
+  const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
   const streakNum = Number(streak);
-  const week = Array.from({ length: 7 }, (_, i) => {
-    // i=0 oldest .. i=6 today
-    const dayOffset = 6 - i;
-    const ok = streakNum > dayOffset;
-    return ok;
+
+  // For each weekday slot (0..6), determine state:
+  //  - "future"   : after today
+  //  - "today"    : today's column (checked or not)
+  //  - "done"     : past day covered by current streak
+  //  - "missed"   : past day not covered by streak
+  type DayState = "future" | "today-pending" | "today-done" | "done" | "missed";
+  const week: DayState[] = Array.from({ length: 7 }, (_, i) => {
+    if (i > todayIdx) return "future";
+    if (i === todayIdx) return checkedInToday ? "today-done" : "today-pending";
+    // past day in this week — count days back from today
+    const daysBack = todayIdx - i;
+    // streak includes today if checked. Days covered going back = streakNum - (checkedInToday ? 1 : 0)
+    const pastCovered = streakNum - (checkedInToday ? 1 : 0);
+    return daysBack <= pastCovered ? "done" : "missed";
   });
 
   // Sunday bonus is unknown without contract getter; show informational
