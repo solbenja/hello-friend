@@ -51,7 +51,28 @@ export function TxResultModal({
   txHash,
   details,
   primaryAction,
+  earnedNote,
 }: TxResultModalProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState<string>("none");
+  const [glow, setGlow] = useState<{ x: number; y: number; on: boolean }>({ x: 50, y: 50, on: false });
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const rx = (0.5 - py) * 16; // max 8deg
+    const ry = (px - 0.5) * 16; // max 8deg
+    setTransform(`perspective(1000px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`);
+    setGlow({ x: px * 100, y: py * 100, on: true });
+  }, []);
+  const onLeave = useCallback(() => {
+    setTransform("none");
+    setGlow((g) => ({ ...g, on: false }));
+  }, []);
+
   if (!open) return null;
   const ok = kind === "ok";
 
@@ -59,11 +80,25 @@ export function TxResultModal({
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4 backdrop-blur-md animate-fade-in"
       onClick={onClose}
+      style={{ perspective: "1000px" }}
     >
       <div
+        ref={cardRef}
         className="relative w-full max-w-md panel-elevated p-6 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        style={{ transform, transition: "transform 0.15s ease", transformStyle: "preserve-3d" }}
       >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-150"
+          style={{
+            opacity: glow.on ? 1 : 0,
+            background: `radial-gradient(360px circle at ${glow.x}% ${glow.y}%, hsl(var(--primary) / 0.15), transparent 60%)`,
+            mixBlendMode: "screen",
+          }}
+        />
         <button
           onClick={onClose}
           className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface hover:text-foreground"
