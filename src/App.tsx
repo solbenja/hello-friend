@@ -16,6 +16,7 @@ import Ecosystem from "./pages/Ecosystem";
 import Parameters from "./pages/Parameters";
 import Deploy from "./pages/Deploy";
 import Forge from "./pages/Forge";
+import Rewards from "./pages/Rewards";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/parameters" element={<Parameters />} />
           <Route path="/deploy" element={<Deploy />} />
           <Route path="/forge" element={<Forge />} />
+          <Route path="/rewards" element={<Rewards />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

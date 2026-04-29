@@ -28,6 +28,7 @@ import {
   Sparkles,
   Hammer,
   Droplets,
+  Trophy,
 } from "lucide-react";
 
 const explorerItems = [
@@ -47,6 +48,7 @@ const chainItems = [
   { title: "Terminal", url: "/terminal", icon: Zap },
   { title: "Ecosystem", url: "/ecosystem", icon: Compass },
   { title: "Parameters", url: "/parameters", icon: Shield },
+  { title: "Rewards", url: "/rewards", icon: Trophy },
 ];
 
 const litvmItems = [
