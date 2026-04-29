@@ -25,8 +25,6 @@ import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
-import { autoRecord } from "@/lib/points";
-import { toast as sonnerToast } from "sonner";
 
 type TokenMeta = { address: string; symbol: string; decimals: number; balance: string };
 type Status = { kind: "idle" | "info" | "ok" | "error"; msg: string; txHash?: string };
@@ -340,8 +338,6 @@ export default function Pool() {
       reloadPair();
       const [m1, m2] = await Promise.all([loadTokenMeta(tokenAAddr, walletAddr), loadTokenMeta(tokenBAddr, walletAddr)]);
       setTokenA(m1); setTokenB(m2);
-      // Auto-record +2 pts (LP) silent best-effort
-      autoRecord("lp").then((h) => { if (h) sonnerToast.success("+2 pts recorded"); });
     } catch (e) {
       setStatus({ kind: "idle", msg: "" });
       setResultModal({ open: true, kind: "error", title: "Add Liquidity Failed", subtitle: errMsg(e).slice(0, 200) });
