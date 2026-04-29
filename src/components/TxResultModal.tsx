@@ -1,3 +1,4 @@
+import { useRef, useState, useCallback } from "react";
 import { CheckCircle2, AlertTriangle, ExternalLink, X, Copy } from "lucide-react";
 import { EXPLORER_URL, shortAddr } from "@/lib/litvm";
 import { toast } from "@/hooks/use-toast";
