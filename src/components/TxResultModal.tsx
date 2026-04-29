@@ -29,6 +29,8 @@ export interface TxResultModalProps {
   details?: TxResultDetail[];
   /** Optional primary action button (besides Close). */
   primaryAction?: { label: string; onClick: () => void };
+  /** Optional teal earned-points note shown above the action buttons. */
+  earnedNote?: string;
 }
 
 function copyText(value: string) {
