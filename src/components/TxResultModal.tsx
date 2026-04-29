@@ -167,6 +167,12 @@ export function TxResultModal({
           </div>
         ) : null}
 
+        {earnedNote && (
+          <div className="mt-4 rounded-xl border border-teal-500/30 bg-teal-500/5 px-3 py-2 text-center text-xs font-medium text-teal-300">
+            {earnedNote}
+          </div>
+        )}
+
         <div className="mt-5 grid grid-cols-1 gap-2">
           {primaryAction && (
             <button
