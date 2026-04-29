@@ -779,6 +779,7 @@ export default function Deploy() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Token Deployed" ? <PointsEarned kind="deploy" /> : undefined}
       />
     </div>
   );
