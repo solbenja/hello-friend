@@ -243,6 +243,8 @@ export default function Deploy() {
     open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
 
+  const { recordSilent } = usePoints();
+
   const onLitVM = chainId === TOKEN_FACTORY_CHAIN_ID;
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
@@ -398,6 +400,8 @@ export default function Deploy() {
           ...(tokenAddr ? [{ label: "Contract", value: tokenAddr, addressLink: true } as TxResultDetail] : []),
         ],
       });
+      // Auto-record points (silent)
+      recordSilent("deploy");
       pushWalletTx({
         hash: tx.hash,
         kind: "deploy",
