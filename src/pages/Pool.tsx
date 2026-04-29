@@ -625,6 +625,7 @@ export default function Pool() {
                 >
                   {busy ? "Working…" : "Add Liquidity"}
                 </button>
+                <PointsPreview kind="lp" verb="Adding liquidity" />
               </>
             ) : (
               <>
@@ -673,6 +674,7 @@ export default function Pool() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Liquidity Added" ? <PointsEarned kind="lp" /> : undefined}
       />
     </div>
   );
