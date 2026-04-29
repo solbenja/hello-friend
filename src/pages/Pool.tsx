@@ -24,6 +24,8 @@ import {
 import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type TokenMeta = { address: string; symbol: string; decimals: number; balance: string };
@@ -179,6 +181,8 @@ export default function Pool() {
     open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
 
+  const { recordSilent } = usePoints();
+
   const ensureChain = useCallback(async () => {
     if (chainId !== LITVM_CHAIN_ID) await switchChainAsync({ chainId: LITVM_CHAIN_ID });
   }, [chainId, switchChainAsync]);
@@ -326,6 +330,8 @@ export default function Pool() {
           { label: "Router", value: "LitDeX Router" },
         ],
       });
+      // Auto-record points (silent)
+      recordSilent("lp");
       pushWalletTx({
         hash: finalHash,
         kind: "liquidity",
@@ -619,6 +625,7 @@ export default function Pool() {
                 >
                   {busy ? "Working…" : "Add Liquidity"}
                 </button>
+                <PointsPreview kind="lp" verb="Adding liquidity" />
               </>
             ) : (
               <>
@@ -667,6 +674,7 @@ export default function Pool() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Liquidity Added" ? <PointsEarned kind="lp" /> : undefined}
       />
     </div>
   );

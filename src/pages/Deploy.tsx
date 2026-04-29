@@ -32,6 +32,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type Status =
@@ -241,6 +243,8 @@ export default function Deploy() {
     open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
 
+  const { recordSilent } = usePoints();
+
   const onLitVM = chainId === TOKEN_FACTORY_CHAIN_ID;
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
@@ -396,6 +400,8 @@ export default function Deploy() {
           ...(tokenAddr ? [{ label: "Contract", value: tokenAddr, addressLink: true } as TxResultDetail] : []),
         ],
       });
+      // Auto-record points (silent)
+      recordSilent("deploy");
       pushWalletTx({
         hash: tx.hash,
         kind: "deploy",
@@ -718,6 +724,8 @@ export default function Deploy() {
                     Deploy Token
                   </button>
 
+                  <PointsPreview kind="deploy" verb="Deploying" />
+
                   <div className="text-center text-[11px] text-white/30">
                     A non-refundable deployment fee of {deployFee} zkLTC will be charged on confirmation.
                   </div>
@@ -773,6 +781,7 @@ export default function Deploy() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Token Deployed" ? <PointsEarned kind="deploy" /> : undefined}
       />
     </div>
   );

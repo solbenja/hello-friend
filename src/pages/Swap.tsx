@@ -22,6 +22,8 @@ import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 
 // Some routers expose WZKLTC(), others WETH(). Try both, fallback to constant.
 const ROUTER_WRAPPED_ABI = [
@@ -299,6 +301,7 @@ export default function Swap() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({});
   const quoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { recordSilent } = usePoints();
 
   // Result modal (final OK / error)
   const [resultModal, setResultModal] = useState<{
@@ -496,6 +499,8 @@ export default function Swap() {
           { label: "Router", value: routerKey === "omnifun" ? "OmniFun Router" : "LitDeX Router" },
         ],
       });
+      // Auto-record points (silent, best-effort)
+      recordSilent("swap");
       pushWalletTx({
         hash: finalHash,
         kind: "swap",
@@ -763,6 +768,9 @@ export default function Swap() {
               </div>
             )}
 
+            {/* ── Points preview ── */}
+            <PointsPreview kind="swap" verb="This swap" />
+
             {/* ── Action button ── */}
             <div className="pt-1">{action}</div>
           </div>
@@ -805,6 +813,7 @@ export default function Swap() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Swap Confirmed" ? <PointsEarned kind="swap" /> : undefined}
       />
     </div>
   );

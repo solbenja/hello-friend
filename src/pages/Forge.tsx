@@ -48,6 +48,8 @@ import {
 } from "@/lib/forgeTemplates";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type DeployStatus =
@@ -508,6 +510,7 @@ export default function Forge() {
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
+  const { recordSilent } = usePoints();
   const publicClient = usePublicClient({ chainId: LITVM_CHAIN_ID });
 
   const { data: feeWei } = useReadContract({
@@ -686,6 +689,8 @@ export default function Forge() {
         account: address,
       });
       toast({ title: "Contract deployed 🚀", description: `Live at ${shortAddr(deployedAddr)}` });
+      // Auto-record points (silent)
+      recordSilent("deploy");
       loadMine();
     } catch (e) {
       const err = e as { shortMessage?: string; message?: string };
@@ -809,6 +814,7 @@ export default function Forge() {
             {isFactoryTab ? "Generate & Download" : `Deploy (${feeEther} ${LITVM_FACTORY_NATIVE_SYMBOL})`}
           </button>
         </div>
+        {!isFactoryTab && <div className="mt-3"><PointsPreview kind="deploy" verb="Deploying" /></div>}
       </div>
       </TiltCard>
 
@@ -936,6 +942,7 @@ export default function Forge() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Contract Deployed" ? <PointsEarned kind="deploy" /> : undefined}
       />
     </div>
   );
