@@ -181,6 +181,8 @@ export default function Pool() {
     open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
 
+  const { recordSilent } = usePoints();
+
   const ensureChain = useCallback(async () => {
     if (chainId !== LITVM_CHAIN_ID) await switchChainAsync({ chainId: LITVM_CHAIN_ID });
   }, [chainId, switchChainAsync]);
@@ -328,6 +330,8 @@ export default function Pool() {
           { label: "Router", value: "LitDeX Router" },
         ],
       });
+      // Auto-record points (silent)
+      recordSilent("lp");
       pushWalletTx({
         hash: finalHash,
         kind: "liquidity",
