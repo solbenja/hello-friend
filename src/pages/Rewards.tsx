@@ -14,6 +14,7 @@ import {
   recordAction,
   registerReferral,
 } from "@/lib/points";
+import { useLocalPoints, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 
 function StatPill({ label, value }: { label: string; value: string | number }) {
   return (
