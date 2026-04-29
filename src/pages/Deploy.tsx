@@ -33,6 +33,8 @@ import { toast } from "@/hooks/use-toast";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
+import { autoRecord } from "@/lib/points";
+import { toast as sonnerToast } from "sonner";
 
 type Status =
   | { kind: "idle" }
@@ -408,6 +410,8 @@ export default function Deploy() {
       setForm(DEFAULT_FORM);
       setStep(1);
       setRefreshKey((k) => k + 1);
+      // Auto-record +3 pts (deploy) silent best-effort
+      autoRecord("deploy").then((h) => { if (h) sonnerToast.success("+3 pts recorded"); });
     } catch (e) {
       setStatus({ kind: "error", msg: errMsg(e) });
       setShowModal(false);
