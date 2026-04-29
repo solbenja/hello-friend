@@ -499,6 +499,8 @@ export default function Swap() {
           { label: "Router", value: routerKey === "omnifun" ? "OmniFun Router" : "LitDeX Router" },
         ],
       });
+      // Auto-record points (silent, best-effort)
+      recordSilent("swap");
       pushWalletTx({
         hash: finalHash,
         kind: "swap",
@@ -766,6 +768,9 @@ export default function Swap() {
               </div>
             )}
 
+            {/* ── Points preview ── */}
+            <PointsPreview kind="swap" verb="This swap" />
+
             {/* ── Action button ── */}
             <div className="pt-1">{action}</div>
           </div>
@@ -808,6 +813,7 @@ export default function Swap() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
+        footerSlot={resultModal.title === "Swap Confirmed" ? <PointsEarned kind="swap" /> : undefined}
       />
     </div>
   );
