@@ -1,284 +1,329 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, Copy, Droplets, ExternalLink, Loader2, Rocket, Trophy, Users, Gift, Clock } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAccount } from "wagmi";
-import { toast } from "sonner";
-import { TiltCard } from "@/components/TiltCard";
-import { EXPLORER_URL, shortAddr, errMsg } from "@/lib/litvm";
+import { BrowserProvider, Contract, JsonRpcProvider } from "ethers";
+import { Trophy, Flame, Users, Gift, Copy, Check, RefreshCw, Sparkles } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { RPC_URL, EXPLORER_URL, shortAddr, errMsg } from "@/lib/litvm";
 import {
-  DAILY_POINTS_CAP,
   POINTS_SYSTEM_ADDRESS,
-  claimReferralPoints,
-  readPendingReferral,
-  readPoints,
-  readReferrals,
-  recordAction,
-  registerReferral,
-} from "@/lib/points";
-import { useLocalPoints, LOCAL_DAILY_CAP } from "@/lib/localPoints";
+  POINTS_ABI,
+  POINTS_DAILY_CAP,
+  OWNER_BYPASS_WALLET,
+  msUntilIstMidnight,
+  formatHMS,
+} from "@/lib/pointsSystem";
 
-function StatPill({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-      <div className="text-[10px] uppercase tracking-wider text-white/30">{label}</div>
-      <div className="mt-0.5 font-display text-lg text-white">{value}</div>
-    </div>
-  );
-}
+const readProvider = new JsonRpcProvider(RPC_URL);
 
-/** Time remaining until next 00:00 IST (UTC+5:30) */
-function nextIstMidnightMs() {
-  const now = new Date();
-  const istNow = new Date(now.getTime() + (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000);
-  const ist = new Date(istNow);
-  ist.setUTCHours(0, 0, 0, 0);
-  ist.setUTCDate(ist.getUTCDate() + 1);
-  return ist.getTime() - (5.5 * 60 - now.getTimezoneOffset()) * 60 * 1000;
-}
-function fmtCountdown(ms: number) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-}
+type PointsState = {
+  total: number;
+  daily: number;
+  pendingReferral: number;
+  referrals: string[];
+};
+
+const ZERO: PointsState = { total: 0, daily: 0, pendingReferral: 0, referrals: [] };
 
 export default function Rewards() {
-  const { address, isConnected } = useAccount();
-  const localPoints = useLocalPoints(address);
-  const [total, setTotal] = useState<bigint>(0n);
-  const [daily, setDaily] = useState<bigint>(0n);
-  const [pending, setPending] = useState<bigint>(0n);
-  const [refs, setRefs] = useState<string[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const { address: walletAddr, isConnected } = useAccount();
+  const [data, setData] = useState<PointsState>(ZERO);
+  const [loading, setLoading] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [countdown, setCountdown] = useState(msUntilIstMidnight());
+  const [copied, setCopied] = useState(false);
 
-  const refresh = useCallback(async () => {
-    if (!address) { setTotal(0n); setDaily(0n); setPending(0n); setRefs([]); return; }
+  const isOwner = !!walletAddr && walletAddr.toLowerCase() === OWNER_BYPASS_WALLET;
+
+  const refLink = useMemo(() => {
+    if (!walletAddr) return "";
+    const base =
+      typeof window !== "undefined" ? `${window.location.origin}/swap` : "https://litdex.test-hub.xyz/swap";
+    return `${base}?ref=${walletAddr}`;
+  }, [walletAddr]);
+
+  const fetchPoints = useCallback(async () => {
+    if (!walletAddr) {
+      setData(ZERO);
+      return;
+    }
+    setLoading(true);
     try {
-      const [p, pend, rs] = await Promise.all([
-        readPoints(address),
-        readPendingReferral(address),
-        readReferrals(address).catch(() => [] as string[]),
+      const c = new Contract(POINTS_SYSTEM_ADDRESS, POINTS_ABI, readProvider);
+      const [pts, pending, refs] = await Promise.all([
+        c.getPoints(walletAddr),
+        c.getPendingReferralPoints(walletAddr),
+        c.getReferrals(walletAddr),
       ]);
-      setTotal(p.total); setDaily(p.daily); setPending(pend); setRefs(rs);
-    } catch (e) { console.warn("rewards read failed", e); }
-  }, [address]);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  // Auto-register referral from ?ref= once wallet is connected
-  useEffect(() => {
-    if (!address) return;
-    const sp = new URLSearchParams(window.location.search);
-    const ref = sp.get("ref");
-    if (!ref || ref.toLowerCase() === address.toLowerCase()) return;
-    const key = `litdex_ref_registered_${address.toLowerCase()}`;
-    if (localStorage.getItem(key)) return;
-    (async () => {
-      try {
-        await registerReferral(ref);
-        localStorage.setItem(key, "1");
-        toast.success("Referral linked", { description: shortAddr(ref) });
-      } catch (e) {
-        console.warn("registerReferral failed", e);
-      }
-    })();
-  }, [address]);
-
-  const action = async (kind: "swap" | "lp" | "deploy") => {
-    setBusy(kind);
-    try {
-      const hash = await recordAction(kind);
-      toast.success(`${kind === "swap" ? "+1" : kind === "lp" ? "+2" : "+3"} pt recorded`, {
-        description: shortAddr(hash),
+      setData({
+        total: Number(pts[0]),
+        daily: Number(pts[1]),
+        pendingReferral: Number(pending),
+        referrals: (refs as string[]) ?? [],
       });
-      refresh();
     } catch (e) {
-      toast.error("Record failed", { description: errMsg(e).slice(0, 140) });
-    } finally { setBusy(null); }
-  };
+      console.error("getPoints failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [walletAddr]);
+
+  useEffect(() => {
+    fetchPoints();
+    const id = setInterval(fetchPoints, 10_000);
+    return () => clearInterval(id);
+  }, [fetchPoints]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const ms = msUntilIstMidnight();
+      setCountdown(ms);
+      if (ms < 1000) fetchPoints();
+    }, 1000);
+    return () => clearInterval(id);
+  }, [fetchPoints]);
 
   const claim = async () => {
-    setBusy("claim");
+    if (!walletAddr) return;
+    setClaiming(true);
     try {
-      const hash = await claimReferralPoints();
-      toast.success("Referral points claimed", { description: shortAddr(hash) });
-      refresh();
+      const provider = new BrowserProvider((window as { ethereum?: unknown }).ethereum as never);
+      const signer = await provider.getSigner();
+      const c = new Contract(POINTS_SYSTEM_ADDRESS, POINTS_ABI, signer);
+      const tx = await c.claimReferralPoints();
+      toast({ title: "Claiming referral points…", description: shortAddr(tx.hash) });
+      await tx.wait();
+      toast({ title: "✨ Referral points claimed" });
+      fetchPoints();
     } catch (e) {
-      toast.error("Claim failed", { description: errMsg(e).slice(0, 140) });
-    } finally { setBusy(null); }
+      toast({ title: "Claim failed", description: errMsg(e), variant: "destructive" });
+    } finally {
+      setClaiming(false);
+    }
   };
 
-  const refLink = address ? `${window.location.origin}/swap?ref=${address}` : "";
-  const dailyNum = Number(daily);
-  const pct = Math.min(100, (dailyNum / DAILY_POINTS_CAP) * 100);
-  const capReached = dailyNum >= DAILY_POINTS_CAP;
+  const copyRef = async () => {
+    if (!refLink) return;
+    try {
+      await navigator.clipboard.writeText(refLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // ignore
+    }
+  };
 
-  // Live IST countdown
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const countdown = useMemo(() => fmtCountdown(nextIstMidnightMs() - now), [now]);
+  const dailyPct = Math.min(100, (data.daily / POINTS_DAILY_CAP) * 100);
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-teal-400">
-            <Trophy className="h-3 w-3" /> Points & Rewards
-          </div>
-          <h1 className="mt-3 font-display text-5xl">
-            <span className="text-gradient-aurora">Earn LDEX Points</span>
+          <h1 className="font-display text-4xl">
+            <span className="text-gradient-aurora">Rewards</span>
           </h1>
-          <p className="mt-2 max-w-md text-sm text-muted-foreground">
-            Swap, add liquidity, deploy and refer friends to climb the LitDeX leaderboard.
+          <p className="mt-1 text-sm text-muted-foreground">
+            Earn points on-chain — swap, provide liquidity, deploy, and refer friends.
           </p>
         </div>
-        <a
-          href={`${EXPLORER_URL}/address/${POINTS_SYSTEM_ADDRESS}`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5 text-xs text-white/60 hover:border-teal-500/40 hover:text-teal-400"
-        >
-          <ExternalLink className="h-3 w-3" /> {shortAddr(POINTS_SYSTEM_ADDRESS)}
-        </a>
-      </header>
-
-      {/* Points Card */}
-      <TiltCard tiltLimit={4} scale={1.01} className="rounded-2xl">
-        <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] p-6 md:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Total Points</div>
-              <div className="mt-1 font-display text-6xl text-teal-400">{total.toString()}</div>
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              <StatPill label="Daily" value={`${dailyNum} / ${DAILY_POINTS_CAP}`} />
-              <StatPill label="Today (Local)" value={`${localPoints.today} / ${LOCAL_DAILY_CAP}`} />
-              <StatPill label="Lifetime (Local)" value={localPoints.total} />
-              <StatPill label="Pending Referral" value={pending.toString()} />
-              <StatPill label="Referrals" value={refs.length} />
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <div className="mb-1 flex items-center justify-between text-[11px] text-white/40">
-              <span>Daily cap progress</span>
-              <span className="font-mono">{pct.toFixed(0)}%</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.05]">
-              <div className="h-full bg-gradient-to-r from-teal-500 to-teal-300 transition-all" style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-
-          {capReached ? (
-            <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-orange-500/40 bg-orange-500/10 p-5 text-center">
-              <Clock className="h-6 w-6 text-orange-300" />
-              <div className="font-display text-base text-white">
-                Daily limit reached ({DAILY_POINTS_CAP}/{DAILY_POINTS_CAP} pts)
-              </div>
-              <div className="font-mono text-xs text-white/60">Resets in {countdown} (00:00 IST)</div>
-            </div>
-          ) : (
-            <>
-              <div className="mt-3 text-[11px] text-white/40">{dailyNum}/{DAILY_POINTS_CAP} points used today · resets in <span className="font-mono text-white/60">{countdown}</span></div>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <ActionBtn
-                  icon={<ArrowLeftRight className="h-4 w-4" />}
-                  label="Record Swap"
-                  sub="+1 pt"
-                  loading={busy === "swap"}
-                  disabled={!isConnected || !!busy}
-                  onClick={() => action("swap")}
-                />
-                <ActionBtn
-                  icon={<Droplets className="h-4 w-4" />}
-                  label="Record LP"
-                  sub="+2 pts"
-                  loading={busy === "lp"}
-                  disabled={!isConnected || !!busy}
-                  onClick={() => action("lp")}
-                />
-                <ActionBtn
-                  icon={<Rocket className="h-4 w-4" />}
-                  label="Record Deploy"
-                  sub="+3 pts"
-                  loading={busy === "deploy"}
-                  disabled={!isConnected || !!busy}
-                  onClick={() => action("deploy")}
-                />
-                <ActionBtn
-                  icon={<Gift className="h-4 w-4" />}
-                  label="Claim Referral"
-                  sub={`${pending.toString()} pts pending`}
-                  loading={busy === "claim"}
-                  disabled={!isConnected || !!busy || pending === 0n}
-                  onClick={claim}
-                  accent
-                />
-              </div>
-            </>
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <Badge variant="outline" className="border-primary/40 text-primary">
+              Owner
+            </Badge>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPoints}
+            disabled={loading || !isConnected}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
-      </TiltCard>
+      </div>
 
-      {/* Referral */}
-      <TiltCard tiltLimit={4} scale={1.01} className="rounded-2xl">
-        <div className="rounded-2xl border border-white/[0.07] bg-[#0d1117] p-6 md:p-8">
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-teal-400">
-            <Users className="h-3 w-3" /> Referrals
+      {!isConnected && (
+        <Card className="border-primary/20 bg-primary/5 p-6 text-sm text-muted-foreground">
+          Connect your wallet to view and earn points.
+        </Card>
+      )}
+
+      <Card className="relative overflow-hidden border-border/40 bg-card/40 p-6 backdrop-blur-xl md:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+        <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-center">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Total Points
+            </div>
+            <div className="mt-2 flex items-baseline gap-3">
+              <div className="font-display text-6xl font-bold text-gradient-aurora md:text-7xl">
+                {data.total.toLocaleString()}
+              </div>
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              On-chain · {shortAddr(POINTS_SYSTEM_ADDRESS)}
+            </div>
           </div>
-          <h2 className="mt-2 font-display text-2xl text-white">Invite friends, earn together</h2>
-          <p className="mt-1 text-xs text-white/40">
-            Points credited when a referred wallet completes 5 transactions.
-          </p>
 
-          <div className="mt-5 flex flex-col gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 sm:flex-row sm:items-center">
-            <code className="flex-1 break-all font-mono text-xs text-teal-300">
-              {refLink || "Connect wallet to get your referral link"}
-            </code>
-            <button
-              disabled={!refLink}
-              onClick={() => { navigator.clipboard.writeText(refLink); toast.success("Referral link copied"); }}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 px-3 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-40"
-            >
-              <Copy className="h-3 w-3" /> Copy
-            </button>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatPill label="Total Referrals" value={refs.length} />
-            <StatPill label="Pending Points" value={pending.toString()} />
-            <StatPill label="Status" value={refs.length > 0 ? "Active" : "—"} />
+          <div className="rounded-2xl border border-border/40 bg-background/40 p-5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Daily cap</span>
+              <span className="font-mono text-primary">
+                {data.daily} / {POINTS_DAILY_CAP}
+              </span>
+            </div>
+            <Progress value={dailyPct} className="mt-2 h-2" />
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                Resets in (IST)
+              </span>
+              <span className="font-mono text-base text-foreground">{formatHMS(countdown)}</span>
+            </div>
           </div>
         </div>
-      </TiltCard>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={<Flame className="h-4 w-4" />}
+          label="Daily"
+          value={`${data.daily}/${POINTS_DAILY_CAP}`}
+          hint="Resets at 00:00 IST"
+        />
+        <StatCard
+          icon={<Trophy className="h-4 w-4" />}
+          label="Lifetime"
+          value={data.total.toLocaleString()}
+          hint="All-time points"
+        />
+        <StatCard
+          icon={<Gift className="h-4 w-4" />}
+          label="Pending Referral"
+          value={data.pendingReferral.toLocaleString()}
+          hint="Claimable bonus"
+        />
+        <StatCard
+          icon={<Users className="h-4 w-4" />}
+          label="Referrals"
+          value={String(data.referrals.length)}
+          hint="Wallets you referred"
+        />
+      </div>
+
+      <Card className="border-border/40 bg-card/40 p-6 backdrop-blur-xl">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+          How to earn
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <EarnRow label="Swap" pts="+1" />
+          <EarnRow label="Add Liquidity" pts="+2" />
+          <EarnRow label="Deploy Contract" pts="+3" />
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Daily cap of {POINTS_DAILY_CAP} per wallet. Counter resets every 00:00 IST on-chain.
+        </p>
+      </Card>
+
+      <Card className="border-border/40 bg-card/40 p-6 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Referral Link
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              Earn +5 pts after each referred wallet completes 5 transactions.
+            </div>
+          </div>
+          <Button
+            onClick={claim}
+            disabled={!isConnected || claiming || data.pendingReferral === 0}
+            className="gap-2"
+          >
+            <Gift className="h-4 w-4" />
+            {claiming ? "Claiming…" : `Claim ${data.pendingReferral} pts`}
+          </Button>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-border/40 bg-background/40 p-3">
+          <code className="flex-1 truncate font-mono text-xs text-foreground/80">
+            {refLink || "Connect wallet to generate your link"}
+          </code>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!refLink}
+            onClick={copyRef}
+            className="gap-1.5"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </Button>
+        </div>
+
+        {data.referrals.length > 0 && (
+          <div className="mt-5">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+              Your Referrals ({data.referrals.length})
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {data.referrals.map((r) => (
+                <a
+                  key={r}
+                  href={`${EXPLORER_URL}/address/${r}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-border/40 bg-background/40 px-3 py-2 font-mono text-xs text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+                >
+                  {shortAddr(r)}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <p className="text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+        Source of truth · PointsSystemV2 on LitVM
+      </p>
     </div>
   );
 }
 
-function ActionBtn({
-  icon, label, sub, onClick, disabled, loading, accent,
+function StatCard({
+  icon,
+  label,
+  value,
+  hint,
 }: {
-  icon: React.ReactNode; label: string; sub: string;
-  onClick: () => void; disabled?: boolean; loading?: boolean; accent?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex h-auto flex-col items-start gap-1 rounded-xl border px-4 py-3 text-left transition-all disabled:opacity-50 ${
-        accent
-          ? "border-orange-500/40 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
-          : "border-teal-500/30 bg-teal-500/5 text-teal-300 hover:bg-teal-500/10"
-      }`}
-    >
-      <div className="flex items-center gap-2 text-xs font-semibold">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+    <Card className="border-border/40 bg-card/40 p-4 backdrop-blur-xl">
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+        <span className="text-primary">{icon}</span>
         {label}
       </div>
-      <div className="text-[11px] text-white/40">{sub}</div>
-    </button>
+      <div className="mt-2 font-display text-3xl font-bold text-foreground">{value}</div>
+      <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div>
+    </Card>
+  );
+}
+
+function EarnRow({ label, pts }: { label: string; pts: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-border/40 bg-background/40 px-4 py-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <span className="font-mono text-sm font-semibold text-primary">{pts}</span>
+    </div>
   );
 }

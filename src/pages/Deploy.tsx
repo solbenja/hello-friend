@@ -32,7 +32,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
-import { awardPoints, useLocalPoints, POINTS_PER_KIND, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type Status =
@@ -239,9 +238,8 @@ export default function Deploy() {
   const [allTokens, setAllTokens] = useState<TokenInfo[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [resultModal, setResultModal] = useState<{
-    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[]; earnedNote?: string;
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
-  const localPoints = useLocalPoints(address);
 
   const onLitVM = chainId === TOKEN_FACTORY_CHAIN_ID;
 
@@ -385,8 +383,6 @@ export default function Deploy() {
         tokenAddr,
       });
       setShowModal(false);
-      const earned = awardPoints(address, "deploy");
-      const afterToday = localPoints.today + earned;
       setResultModal({
         open: true,
         kind: "ok",
@@ -399,7 +395,6 @@ export default function Deploy() {
           { label: "Supply", value: Number(form.totalSupply).toLocaleString() },
           ...(tokenAddr ? [{ label: "Contract", value: tokenAddr, addressLink: true } as TxResultDetail] : []),
         ],
-        earnedNote: earned > 0 ? `+${earned} Points Earned! (${afterToday}/${LOCAL_DAILY_CAP} today)` : undefined,
       });
       pushWalletTx({
         hash: tx.hash,
@@ -723,12 +718,6 @@ export default function Deploy() {
                     Deploy Token
                   </button>
 
-                  {!localPoints.capReached && (
-                    <div className="text-center text-xs text-teal-400">
-                      ⚡ Deploying earns +{POINTS_PER_KIND.deploy} points ({localPoints.today}/{LOCAL_DAILY_CAP} today)
-                    </div>
-                  )}
-
                   <div className="text-center text-[11px] text-white/30">
                     A non-refundable deployment fee of {deployFee} zkLTC will be charged on confirmation.
                   </div>
@@ -784,7 +773,6 @@ export default function Deploy() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
-        earnedNote={resultModal.earnedNote}
       />
     </div>
   );

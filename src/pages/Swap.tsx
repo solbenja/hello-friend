@@ -21,7 +21,6 @@ import {
 import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
-import { awardPoints, useLocalPoints, POINTS_PER_KIND, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 // Some routers expose WZKLTC(), others WETH(). Try both, fallback to constant.
@@ -303,9 +302,8 @@ export default function Swap() {
 
   // Result modal (final OK / error)
   const [resultModal, setResultModal] = useState<{
-    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[]; earnedNote?: string;
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
-  const localPoints = useLocalPoints(walletAddr);
 
   // Load wrapped native address from router (try WZKLTC then WETH, fallback to constant)
   useEffect(() => {
@@ -486,8 +484,6 @@ export default function Swap() {
       const receipt = await tx.wait();
       const finalHash = receipt?.hash ?? tx.hash;
       setStatus({ kind: "idle", msg: "" });
-      const earned = awardPoints(walletAddr, "swap");
-      const afterToday = localPoints.today + earned;
       setResultModal({
         open: true,
         kind: "ok",
@@ -499,7 +495,6 @@ export default function Swap() {
           { label: "Received", value: `${(+amountOut).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${tokenOut.symbol}` },
           { label: "Router", value: routerKey === "omnifun" ? "OmniFun Router" : "LitDeX Router" },
         ],
-        earnedNote: earned > 0 ? `+${earned} Point Earned! (${afterToday}/${LOCAL_DAILY_CAP} today)` : undefined,
       });
       pushWalletTx({
         hash: finalHash,
@@ -740,11 +735,6 @@ export default function Swap() {
                   <span className="text-white/40">Network</span>
                   <span className="font-mono text-white/80">LitVM LiteForge</span>
                 </div>
-                {!localPoints.capReached && (
-                  <div className="pt-1 text-center text-xs text-teal-400">
-                    ⚡ This swap earns +{POINTS_PER_KIND.swap} point ({localPoints.today}/{LOCAL_DAILY_CAP} today)
-                  </div>
-                )}
               </div>
             )}
 
@@ -815,7 +805,6 @@ export default function Swap() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
-        earnedNote={resultModal.earnedNote}
       />
     </div>
   );

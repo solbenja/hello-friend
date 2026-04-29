@@ -17,8 +17,6 @@ import Parameters from "./pages/Parameters";
 import Deploy from "./pages/Deploy";
 import Forge from "./pages/Forge";
 import Rewards from "./pages/Rewards";
-import Checkin from "./pages/Checkin";
-import RewardsNFTs from "./pages/RewardsNFTs";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -42,8 +40,6 @@ const App = () => (
           <Route path="/deploy" element={<Deploy />} />
           <Route path="/forge" element={<Forge />} />
           <Route path="/rewards" element={<Rewards />} />
-          <Route path="/checkin" element={<Checkin />} />
-          <Route path="/rewards/nfts" element={<RewardsNFTs />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -29,7 +29,6 @@ import {
   Hammer,
   Droplets,
   Trophy,
-  CalendarCheck,
 } from "lucide-react";
 
 const explorerItems = [
@@ -49,12 +48,7 @@ const chainItems = [
   { title: "Terminal", url: "/terminal", icon: Zap },
   { title: "Ecosystem", url: "/ecosystem", icon: Compass },
   { title: "Parameters", url: "/parameters", icon: Shield },
-];
-
-const rewardItems = [
   { title: "Rewards", url: "/rewards", icon: Trophy },
-  { title: "Check In", url: "/checkin", icon: CalendarCheck },
-  { title: "NFTs", url: "/rewards/nfts", icon: Sparkles },
 ];
 
 const litvmItems = [
@@ -106,37 +100,6 @@ export function AppSidebar() {
                       className="group relative h-10 rounded-xl transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:bg-sidebar-accent"
                     >
                       <RouterNavLink to={item.url}>
-                        {isActive && (
-                          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-violet shadow-glow-violet" />
-                        )}
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.title}</span>
-                      </RouterNavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Rewards group */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-semibold tracking-[0.25em] text-muted-foreground/70">
-            <span className="inline-flex items-center gap-1.5"><Trophy className="h-3 w-3" /> Rewards</span>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {rewardItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className="group relative h-10 rounded-xl transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:bg-sidebar-accent"
-                    >
-                      <RouterNavLink to={item.url} end>
                         {isActive && (
                           <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-violet shadow-glow-violet" />
                         )}

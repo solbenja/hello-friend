@@ -24,7 +24,6 @@ import {
 import { resolveLogo, resolveSymbol } from "@/lib/tokenMeta";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
-import { awardPoints, useLocalPoints, POINTS_PER_KIND, LOCAL_DAILY_CAP } from "@/lib/localPoints";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type TokenMeta = { address: string; symbol: string; decimals: number; balance: string };
@@ -177,9 +176,8 @@ export default function Pool() {
 
   // Final result modal (themed pop-up)
   const [resultModal, setResultModal] = useState<{
-    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[]; earnedNote?: string;
+    open: boolean; kind: TxResultKind; title: string; subtitle?: string; txHash?: string; details?: TxResultDetail[];
   }>({ open: false, kind: "ok", title: "" });
-  const localPoints = useLocalPoints(walletAddr);
 
   const ensureChain = useCallback(async () => {
     if (chainId !== LITVM_CHAIN_ID) await switchChainAsync({ chainId: LITVM_CHAIN_ID });
@@ -316,8 +314,6 @@ export default function Pool() {
       const receipt = await tx.wait();
       const finalHash = receipt?.hash ?? tx.hash;
       setStatus({ kind: "idle", msg: "" });
-      const earned = awardPoints(walletAddr, "lp");
-      const afterToday = localPoints.today + earned;
       setResultModal({
         open: true,
         kind: "ok",
@@ -329,7 +325,6 @@ export default function Pool() {
           { label: tokenB?.symbol || "Token B", value: `${(+amountB).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${tokenB?.symbol || ""}` },
           { label: "Router", value: "LitDeX Router" },
         ],
-        earnedNote: earned > 0 ? `+${earned} Points Earned! (${afterToday}/${LOCAL_DAILY_CAP} today)` : undefined,
       });
       pushWalletTx({
         hash: finalHash,
@@ -624,11 +619,6 @@ export default function Pool() {
                 >
                   {busy ? "Working…" : "Add Liquidity"}
                 </button>
-                {!localPoints.capReached && (
-                  <div className="pt-1 text-center text-xs text-teal-400">
-                    ⚡ Adding liquidity earns +{POINTS_PER_KIND.lp} points ({localPoints.today}/{LOCAL_DAILY_CAP} today)
-                  </div>
-                )}
               </>
             ) : (
               <>
@@ -677,7 +667,6 @@ export default function Pool() {
         subtitle={resultModal.subtitle}
         txHash={resultModal.txHash}
         details={resultModal.details}
-        earnedNote={resultModal.earnedNote}
       />
     </div>
   );
