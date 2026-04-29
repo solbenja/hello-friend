@@ -814,6 +814,7 @@ export default function Forge() {
             {isFactoryTab ? "Generate & Download" : `Deploy (${feeEther} ${LITVM_FACTORY_NATIVE_SYMBOL})`}
           </button>
         </div>
+        {!isFactoryTab && <div className="mt-3"><PointsPreview kind="deploy" verb="Deploying" /></div>}
       </div>
       </TiltCard>
 
