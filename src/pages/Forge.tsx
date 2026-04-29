@@ -48,6 +48,8 @@ import {
 } from "@/lib/forgeTemplates";
 import { TiltCard } from "@/components/TiltCard";
 import { TxResultModal, type TxResultKind, type TxResultDetail } from "@/components/TxResultModal";
+import { usePoints } from "@/hooks/usePoints";
+import { PointsPreview, PointsEarned } from "@/components/PointsPreview";
 import { pushWalletTx } from "@/hooks/useWalletHistory";
 
 type DeployStatus =
