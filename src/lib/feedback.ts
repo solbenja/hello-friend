@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-export type SuccessRow = { label: string; value: string };
+export type SuccessRow = { label: string; value: string; href?: string };
 export type SuccessPayload = {
   title: string;
   subtitle?: string;
