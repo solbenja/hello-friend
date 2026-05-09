@@ -4161,30 +4161,30 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text-primary selection:bg-white/30 flex flex-col">
+    <div className="min-h-screen bg-brand-bg text-brand-text-primary selection:bg-white/30 flex flex-col overflow-x-hidden w-full max-w-full">
       {/* Top Header Background & Border */}
-      <div className="fixed top-0 left-0 right-0 z-[49] h-20 bg-black/40 dark:bg-zinc-900/60 backdrop-blur-3xl border-b border-white/5 pointer-events-none" />
+      <div className="fixed top-0 left-0 right-0 z-[49] h-16 sm:h-20 bg-black/40 dark:bg-zinc-900/60 backdrop-blur-3xl border-b border-white/5 pointer-events-none" />
 
       {/* Top Left Logo & Theme Toggle */}
-      <div className="fixed top-4 left-6 z-[60] flex items-center gap-5">
+      <div className="fixed top-3 left-3 sm:top-4 sm:left-6 z-[60] flex items-center gap-2 sm:gap-5">
         <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setActivePage('swap')}>
           <div className="relative">
-            <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2)] group-hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all duration-700 group-hover:rotate-6">
-              <LogoLD size={24} />
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-white rounded-xl flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2)] group-hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all duration-700 group-hover:rotate-6">
+              <LogoLD size={20} className="sm:[font-size:24px]" />
             </div>
             <div className="absolute -inset-2 bg-white/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
           </div>
-          <span className="text-2xl font-black italic tracking-tighter text-white dark:text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+          <span className="hidden sm:inline text-2xl font-black italic tracking-tighter text-white dark:text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
             LitDeX
           </span>
         </div>
         
-        <div className="h-6 w-px bg-white/10 ml-1" />
+        <div className="hidden sm:block h-6 w-px bg-white/10 ml-1" />
 
         {/* Theme Toggle Switch */}
         <button 
           onClick={toggleTheme}
-          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all backdrop-blur-3xl group"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all backdrop-blur-3xl group"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
           {theme === 'dark' ? (
@@ -4203,7 +4203,7 @@ export default function App() {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="sticky top-[calc(100vh-100px)] z-40 h-0 w-full px-8 pointer-events-none flex justify-between items-end"
+              className="sticky top-[calc(100vh-100px)] z-40 h-0 w-full px-3 sm:px-8 pointer-events-none flex justify-between items-end"
             >
                 {/* Bottom Left Tools */}
                 <div className="hidden lg:flex items-center pointer-events-auto">
@@ -4217,15 +4217,15 @@ export default function App() {
                 </div>
 
                 {/* Bottom Right Tools */}
-                <div className="pointer-events-auto flex items-center gap-3">
+                <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
                   <button 
                     onClick={() => handlePageChange(activePage === 'checkin' ? previousPage : 'checkin')}
                     className={cn(
-                      "relative w-16 h-16 flex items-center justify-center rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all backdrop-blur-3xl shadow-2xl group",
+                      "relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all backdrop-blur-3xl shadow-2xl group",
                       activePage === 'checkin' ? "text-white border-white/20 bg-black/60" : "text-white/60"
                     )}
                   >
-                    <CalendarCheck size={24} className={cn("transition-colors", activePage === 'checkin' ? "text-white" : "group-hover:text-white")} />
+                    <CalendarCheck size={20} className={cn("transition-colors sm:[width:24px] sm:[height:24px]", activePage === 'checkin' ? "text-white" : "group-hover:text-white")} />
                     <span className={cn(
                       "absolute top-1 right-1 w-2 h-2 rounded-full",
                       hasCheckedInToday ? "bg-white" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"
@@ -4233,9 +4233,9 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setNotifOpen(o => !o)}
-                    className="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all text-white/60 backdrop-blur-3xl shadow-2xl group"
+                    className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all text-white/60 backdrop-blur-3xl shadow-2xl group"
                   >
-                    <Bell size={24} className="group-hover:text-white transition-colors" />
+                    <Bell size={20} className="group-hover:text-white transition-colors sm:[width:24px] sm:[height:24px]" />
                     <span className={cn(
                       "absolute top-1 right-1 w-2 h-2 rounded-full",
                       hasNewNotif ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" : "bg-white"
@@ -4247,17 +4247,17 @@ export default function App() {
         </AnimatePresence>
 
         {/* Top Right Tools */}
-        <div className="fixed top-4 right-6 z-[60] hidden lg:flex flex-col items-end" style={{ transform: 'scale(1.0)', transformOrigin: 'top right' }}>
+        <div className="fixed top-3 right-3 sm:top-4 sm:right-6 z-[60] flex flex-col items-end" style={{ transform: 'scale(1.0)', transformOrigin: 'top right' }}>
           <ConnectButton.Custom>
             {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
               const connected = mounted && account && chain;
               return (
-                <div className="flex items-center gap-3">
-                  {connected && <WalletBalanceDisplay />}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {connected && <div className="hidden lg:block"><WalletBalanceDisplay /></div>}
                   <button
                     onClick={connected ? openAccountModal : openConnectModal}
                     className={cn(
-                      "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-[0.2em] h-10 wallet-connect-btn",
+                      "flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] h-9 sm:h-10 wallet-connect-btn",
                       connected
                         ? "bg-white text-black hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.2)]"
                         : "bg-white text-black hover:bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.15)]"
@@ -4265,7 +4265,7 @@ export default function App() {
                   >
                     {connected ? (
                        <>
-                         <span className="opacity-80">{account.displayName}</span>
+                         <span className="opacity-80 max-w-[80px] truncate">{account.displayName}</span>
                          <ChevronDown size={14} className="opacity-40" />
                        </>
                     ) : (
@@ -4285,7 +4285,7 @@ export default function App() {
 
         {/* Main Content */}
         <main className={cn(
-          "container mx-auto px-6 pt-32 pb-12 flex-1 transition-all duration-500",
+          "container mx-auto w-full max-w-full px-3 sm:px-6 pt-24 sm:pt-32 pb-12 flex-1 transition-all duration-500",
           activePage === 'checkin' && "blur-xl scale-[0.98] opacity-30 pointer-events-none"
         )}>
           <AnimatePresence mode="wait">
