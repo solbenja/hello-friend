@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import NotificationsPanel, { useNotifications } from './components/NotificationsPanel';
 import SuccessCard from './components/SuccessCard';
 import { addNotif } from './lib/notifications';
@@ -4039,6 +4039,26 @@ export default function App() {
   const [faucetModalOpen, setFaucetModalOpen] = useState(false);
   const { openConnectModal } = useConnectModal();
   const [showFloatingTools, setShowFloatingTools] = useState(false);
+  const footerRef = useRef<HTMLElement | null>(null);
+  const [footerHeight, setFooterHeight] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = footerRef.current;
+      if (el) setFooterHeight(el.getBoundingClientRect().height);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    let ro: ResizeObserver | null = null;
+    if (footerRef.current && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(footerRef.current);
+    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      if (ro) ro.disconnect();
+    };
+  }, []);
 
   // Scroll visibility for floating tools (Show on Scroll Down, Hide on Scroll Up)
   useEffect(() => {
@@ -4203,7 +4223,8 @@ export default function App() {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-6 left-6 right-6 z-50 pointer-events-none flex justify-between items-end"
+              className="fixed left-6 right-6 z-[60] pointer-events-none flex justify-between items-end"
+              style={{ bottom: footerHeight }}
             >
                 {/* Bottom Left Tools */}
                 <div className="hidden lg:flex items-center pointer-events-auto">
@@ -4326,7 +4347,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-brand-border py-12 relative z-50 bg-brand-bg">
+      <footer ref={footerRef} className="border-t border-brand-border py-12 relative z-50 bg-brand-bg">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-white text-sm font-bold">
