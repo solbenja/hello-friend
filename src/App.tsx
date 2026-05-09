@@ -4039,6 +4039,26 @@ export default function App() {
   const [faucetModalOpen, setFaucetModalOpen] = useState(false);
   const { openConnectModal } = useConnectModal();
   const [showFloatingTools, setShowFloatingTools] = useState(false);
+  const footerRef = useRef<HTMLElement | null>(null);
+  const [footerHeight, setFooterHeight] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = footerRef.current;
+      if (el) setFooterHeight(el.getBoundingClientRect().height);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    let ro: ResizeObserver | null = null;
+    if (footerRef.current && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(footerRef.current);
+    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      if (ro) ro.disconnect();
+    };
+  }, []);
 
   // Scroll visibility for floating tools (Show on Scroll Down, Hide on Scroll Up)
   useEffect(() => {
