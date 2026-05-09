@@ -73,7 +73,13 @@ const collapsedIconVariants: Variants = {
 }
 
 export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: string, onPageChange: (id: any) => void }) {
-  const [isExpanded, setExpanded] = React.useState(true);
+  const isTouchDevice = React.useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches,
+    []
+  );
+  const [isExpanded, setExpanded] = React.useState(!isTouchDevice);
   const [isMenuOpen, setMenuOpen] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   
@@ -82,6 +88,10 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
   const scrollPositionOnCollapse = React.useRef(0);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
+    if (isTouchDevice) {
+      lastScrollY.current = latest;
+      return;
+    }
     const previous = lastScrollY.current;
     
     if (isExpanded && latest > previous && latest > 150) {
@@ -140,6 +150,7 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
                   e.stopPropagation();
                   if (item.locked) return;
                   onPageChange(item.id);
+                  if (isTouchDevice) setExpanded(false);
               }}
               className={cn(
                 "relative text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] transition-all px-3 py-2 whitespace-nowrap rounded-lg flex items-center gap-1.5",
