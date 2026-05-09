@@ -59,11 +59,10 @@ export default function NotificationsPanel({
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />}
+      {open && <div className="fixed inset-0 bg-black/60 z-[9998]" onClick={onClose} />}
       <div
-        className="fixed right-0 top-0 h-full z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full z-[9999] flex flex-col w-full sm:w-[360px]"
         style={{
-          width: 360,
           maxWidth: "100vw",
           background: "#080808",
           borderLeft: "1px solid #1f1f1f",
