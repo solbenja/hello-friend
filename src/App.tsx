@@ -3735,20 +3735,6 @@ const MessengerPage = () => {
         </AnimatePresence>
       </div>
 
-      {/* Bonus Points Toast */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest shadow-[0_0_50px_rgba(255,255,255,0.3)] flex items-center gap-3"
-          >
-            <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-[10px]">P</div>
-            {stats.sent > 5 ? "MESSAGE SENT - CAP REACHED" : (stats.sent > 0 ? "+2 POINTS EARNED" : "MESSAGE TRANSMITTED")}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };
