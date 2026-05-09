@@ -1872,10 +1872,32 @@ contract MNFT is ERC721, Ownable {
 
       setTxHash(result.txHash);
       setTxStatus("success");
+      const ca = (result as any).tokenAddress as string | undefined;
+      const explorerUrl = `${litvmChain.blockExplorers.default.url}/tx/${result.txHash}`;
+      const shortHash = `${result.txHash.slice(0, 6)}...${result.txHash.slice(-4)}`;
+      try {
+        if (address) addNotif(address, {
+          type: "deploy",
+          title: "NFT Contract Deployed",
+          message: ca ? `${symbol} at ${ca.slice(0,6)}...${ca.slice(-4)}` : `${symbol} deployed`,
+        });
+      } catch { /* ignore */ }
+      showSuccess({
+        title: "NFT CONTRACT DEPLOYED",
+        subtitle: "PROTOCOL VERIFICATION COMPLETE",
+        rows: [
+          { label: "BASE POINTS", value: "+5 PTS" },
+          { label: "CONTRACT", value: ca ? `${ca.slice(0,6)}...${ca.slice(-4)}` : "—" },
+          { label: "TRANSACTION", value: shortHash, href: explorerUrl },
+          { label: "STATUS", value: "LIVE ON LITVM" },
+        ],
+      });
+      refreshPoints();
       onDeployed?.();
     } catch (err) {
       console.error("Deploy error:", err);
       setTxStatus("failed");
+      showError(errMsg(err));
     } finally {
       setLoading(false);
     }
