@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import NotificationsPanel, { useNotifications } from './components/NotificationsPanel';
+import SuccessCard from './components/SuccessCard';
 import { addNotif } from './lib/notifications';
 import { 
   ArrowLeftRight, 
@@ -1452,17 +1453,28 @@ const ERC20Form = ({ onDeployed }: any) => {
       setTimeout(async () => {
         try { if (address) await readPoints(address); } catch { /* ignore */ }
         refreshPoints();
-        const earned = dailyBefore < 100n;
-        const rows = [
-          { label: "BASE POINTS", value: earned ? "+5 PTS" : "DAILY CAP REACHED" },
-          { label: "CONTRACT", value: ca ? `${ca.slice(0,6)}...${ca.slice(-4)}` : "—" },
-          { label: "STATUS", value: "LIVE ON LITVM" },
-        ];
-        showSuccess({
-          title: "TOKEN DEPLOYED",
-          subtitle: "PROTOCOL VERIFICATION COMPLETE",
-          rows,
-        });
+        const capReached = dailyBefore >= 100n;
+        if (capReached) {
+          showSuccess({
+            title: "DAILY CAP REACHED",
+            subtitle: "MAX 20 TOKEN DEPLOYS PER DAY",
+            rows: [
+              { label: "BASE POINTS", value: "+0 PTS" },
+              { label: "CONTRACT", value: ca ? `${ca.slice(0,6)}...${ca.slice(-4)}` : "—" },
+              { label: "STATUS", value: "LIVE ON LITVM" },
+            ],
+          });
+        } else {
+          showSuccess({
+            title: "TOKEN DEPLOYED",
+            subtitle: "PROTOCOL VERIFICATION COMPLETE",
+            rows: [
+              { label: "BASE POINTS", value: "+5 PTS" },
+              { label: "CONTRACT", value: ca ? `${ca.slice(0,6)}...${ca.slice(-4)}` : "—" },
+              { label: "STATUS", value: "LIVE ON LITVM" },
+            ],
+          });
+        }
         onDeployed?.();
       }, 3000);
     } catch (err) {
@@ -3331,6 +3343,15 @@ const MessengerPage = () => {
     try {
       const { sendMessage } = await import('./lib/litdex-core-logic');
       const target = msgType === 'public' ? 'public' : recipient;
+
+      let msgDailyBefore = 0n;
+      try {
+        if (address) {
+          const p = await readPoints(address);
+          msgDailyBefore = p.msgDaily;
+        }
+      } catch { /* ignore */ }
+
       await sendMessage(target, content);
       
       // Fetch stats BEFORE showing toast
@@ -3339,6 +3360,35 @@ const MessengerPage = () => {
       // Success flow
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
+
+      const capReached = msgDailyBefore >= 20n;
+      if (capReached) {
+        showSuccess({
+          title: "DAILY CAP REACHED",
+          subtitle: "MAX 20 POINTS PER DAY FROM MESSAGES",
+          rows: [
+            { label: "POINTS EARNED", value: "+0 PTS" },
+            { label: "STATUS", value: "MESSAGE SENT" },
+          ],
+        });
+      } else {
+        showSuccess({
+          title: "MESSAGE SENT",
+          subtitle: "PROTOCOL VERIFICATION COMPLETE",
+          rows: [
+            { label: "POINTS EARNED", value: "+2 PTS" },
+            { label: "STATUS", value: "ON-CHAIN DELIVERED" },
+          ],
+        });
+      }
+      refreshPoints();
+      try {
+        if (address) addNotif(address, {
+          type: "points",
+          title: capReached ? "Daily message cap reached" : "Message Sent",
+          message: capReached ? "No more points from messages today" : "+2 points earned from on-chain message",
+        });
+      } catch { /* ignore */ }
       
       setContent('');
       if (msgType === 'direct') setRecipient('');
@@ -4236,6 +4286,7 @@ export default function App() {
 
       <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} wallet={walletAddr} />
       <FaucetModal open={faucetModalOpen} onClose={() => setFaucetModalOpen(false)} wallet={walletAddr} />
+      <SuccessCard />
     </div>
   );
 }
