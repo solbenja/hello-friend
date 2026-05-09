@@ -3343,6 +3343,15 @@ const MessengerPage = () => {
     try {
       const { sendMessage } = await import('./lib/litdex-core-logic');
       const target = msgType === 'public' ? 'public' : recipient;
+
+      let msgDailyBefore = 0n;
+      try {
+        if (address) {
+          const p = await readPoints(address);
+          msgDailyBefore = p.msgDaily;
+        }
+      } catch { /* ignore */ }
+
       await sendMessage(target, content);
       
       // Fetch stats BEFORE showing toast
@@ -3351,6 +3360,35 @@ const MessengerPage = () => {
       // Success flow
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
+
+      const capReached = msgDailyBefore >= 20n;
+      if (capReached) {
+        showSuccess({
+          title: "DAILY CAP REACHED",
+          subtitle: "MAX 20 POINTS PER DAY FROM MESSAGES",
+          rows: [
+            { label: "POINTS EARNED", value: "+0 PTS" },
+            { label: "STATUS", value: "MESSAGE SENT" },
+          ],
+        });
+      } else {
+        showSuccess({
+          title: "MESSAGE SENT",
+          subtitle: "PROTOCOL VERIFICATION COMPLETE",
+          rows: [
+            { label: "POINTS EARNED", value: "+2 PTS" },
+            { label: "STATUS", value: "ON-CHAIN DELIVERED" },
+          ],
+        });
+      }
+      refreshPoints();
+      try {
+        if (address) addNotif(address, {
+          type: "points",
+          title: capReached ? "Daily message cap reached" : "Message Sent",
+          message: capReached ? "No more points from messages today" : "+2 points earned from on-chain message",
+        });
+      } catch { /* ignore */ }
       
       setContent('');
       if (msgType === 'direct') setRecipient('');
