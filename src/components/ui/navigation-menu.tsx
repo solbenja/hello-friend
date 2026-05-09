@@ -105,8 +105,8 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
 
   return (
     <>
-    {/* Desktop nav (hidden on mobile) */}
-    <div className="hidden md:block fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-auto max-w-[90vw] md:max-w-none">
+    {/* Desktop nav — hidden only on actual touch devices below 768px */}
+    <div className="litdex-desktop-nav fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-auto max-w-[90vw] md:max-w-none">
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={isExpanded ? "expanded" : "collapsed"}
@@ -172,11 +172,10 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
       </motion.nav>
     </div>
 
-    {/* Mobile hamburger button */}
     <button
       onClick={() => setMobileOpen(true)}
       aria-label="Open menu"
-      className="md:hidden fixed top-4 right-4 z-[9999] w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-xl flex items-center justify-center text-white shadow-2xl"
+      className="litdex-mobile-hamburger fixed top-4 right-4 z-[9999] w-12 h-12 rounded-full bg-white/80 dark:bg-black/60 border border-black/10 dark:border-white/10 backdrop-blur-xl items-center justify-center text-gray-900 dark:text-white shadow-2xl"
     >
       <Menu className="h-5 w-5" />
     </button>
@@ -188,14 +187,14 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="md:hidden fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex flex-col"
+          className="litdex-mobile-menu fixed inset-0 z-[10000] bg-white dark:bg-black backdrop-blur-xl flex-col"
           onClick={() => setMobileOpen(false)}
         >
           <div className="flex justify-end p-4">
             <button
               onClick={(e) => { e.stopPropagation(); setMobileOpen(false); }}
               aria-label="Close menu"
-              className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white"
+              className="w-11 h-11 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center text-gray-900 dark:text-white"
             >
               <X size={22} />
             </button>
@@ -214,7 +213,9 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
                 }}
                 className={cn(
                   "text-2xl font-bold uppercase tracking-[0.2em] flex items-center gap-3 transition-colors",
-                  activePage === item.id ? "text-white" : "text-white/50",
+                  activePage === item.id
+                    ? "text-black dark:text-white font-bold"
+                    : "text-gray-900 dark:text-white/50",
                   item.locked && "opacity-40 grayscale cursor-default"
                 )}
               >
@@ -224,7 +225,7 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
             ))}
           </div>
           <div
-            className="p-6 border-t border-white/10 flex justify-center"
+            className="p-6 border-t border-black/10 dark:border-white/10 flex justify-center"
             onClick={(e) => e.stopPropagation()}
           >
             <ConnectButton />

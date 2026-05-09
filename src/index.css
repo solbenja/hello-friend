@@ -250,3 +250,15 @@ input[type=number] {
   }
 }
 
+/* Touch-device-only mobile nav swap.
+   Hamburger shows only on actual touch devices below 768px.
+   Laptops/desktops keep the full desktop nav at any window size. */
+.litdex-desktop-nav { display: block; }
+.litdex-mobile-hamburger { display: none; }
+.litdex-mobile-menu { display: none; }
+@media (max-width: 767px) and (hover: none) and (pointer: coarse) {
+  .litdex-desktop-nav { display: none; }
+  .litdex-mobile-hamburger { display: flex; }
+  .litdex-mobile-menu { display: flex; }
+}
+
