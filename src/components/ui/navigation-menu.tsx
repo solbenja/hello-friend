@@ -74,6 +74,7 @@ const collapsedIconVariants: Variants = {
 export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: string, onPageChange: (id: any) => void }) {
   const [isExpanded, setExpanded] = React.useState(true);
   const [isMenuOpen, setMenuOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   
   const { scrollY } = useScroll();
   const lastScrollY = React.useRef(0);
@@ -103,7 +104,8 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
 
   return (
     <>
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-auto max-w-[90vw] md:max-w-none">
+    {/* Desktop nav (hidden on mobile) */}
+    <div className="hidden md:block fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-auto max-w-[90vw] md:max-w-none">
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={isExpanded ? "expanded" : "collapsed"}
@@ -168,6 +170,66 @@ export function AnimatedNavFramer({ activePage, onPageChange }: { activePage: st
         </div>
       </motion.nav>
     </div>
+
+    {/* Mobile hamburger button */}
+    <button
+      onClick={() => setMobileOpen(true)}
+      aria-label="Open menu"
+      className="md:hidden fixed top-4 right-4 z-[9999] w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-xl flex items-center justify-center text-white shadow-2xl"
+    >
+      <Menu className="h-5 w-5" />
+    </button>
+
+    {/* Mobile slide-in menu */}
+    <AnimatePresence>
+      {mobileOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="md:hidden fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex flex-col"
+          onClick={() => setMobileOpen(false)}
+        >
+          <div className="flex justify-end p-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); setMobileOpen(false); }}
+              aria-label="Close menu"
+              className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white"
+            >
+              <X size={22} />
+            </button>
+          </div>
+          <div
+            className="flex-1 flex flex-col items-center justify-center gap-5 px-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.locked) return;
+                  onPageChange(item.id);
+                  setMobileOpen(false);
+                }}
+                className={cn(
+                  "text-2xl font-bold uppercase tracking-[0.2em] flex items-center gap-3 transition-colors",
+                  activePage === item.id ? "text-white" : "text-white/50",
+                  item.locked && "opacity-40 grayscale cursor-default"
+                )}
+              >
+                {item.name}
+                {item.locked && <Lock size={16} className="opacity-40" />}
+              </button>
+            ))}
+          </div>
+          <div
+            className="p-6 border-t border-white/10 flex justify-center"
+            onClick={(e) => e.stopPropagation()}
+            id="mobile-nav-wallet-slot"
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     {/* Simple Overlay Menu (just for effect when clicking 3 lines) */}
     <AnimatePresence>
