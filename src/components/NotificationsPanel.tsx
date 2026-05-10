@@ -17,7 +17,7 @@ const NotifIcon = ({ type }: { type: string }) => {
     faucet: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>),
   };
   return (
-    <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#2a2a2a] flex items-center justify-center text-white flex-shrink-0">
+    <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#2a2a2a] flex items-center justify-center dark:text-white text-gray-700 flex-shrink-0">
       <div className="w-4 h-4">{icons[type] ?? icons.swap}</div>
     </div>
   );
