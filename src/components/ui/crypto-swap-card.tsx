@@ -77,6 +77,7 @@ export default function SwapCard({
 
   const [poolAction, setPoolAction] = React.useState<"add" | "remove">("remove")
   const [isPositionsExpanded, setIsPositionsExpanded] = React.useState(false)
+  const [isSelectPositionExpanded, setIsSelectPositionExpanded] = React.useState(false)
 
   const { data: fromBalance } = useBalance({
     address: walletAddress,
@@ -994,7 +995,7 @@ export default function SwapCard({
                <button onClick={fetchPositions} className="text-[8px] font-bold text-brand-text-muted hover:text-white uppercase tracking-widest">Refresh</button>
             </div>
             <div className="space-y-2">
-               {lpPositions.map(pos => {
+               {(isSelectPositionExpanded ? lpPositions : lpPositions.slice(0, 2)).map(pos => {
                    const t0 = coinMap.get(pos.token0);
                    const t1 = coinMap.get(pos.token1);
                    return (
@@ -1017,6 +1018,27 @@ export default function SwapCard({
                        </button>
                    )
                })}
+               {lpPositions.length > 2 && (
+                 <div className="flex justify-center pt-1">
+                   <button
+                     onClick={() => setIsSelectPositionExpanded(!isSelectPositionExpanded)}
+                     className="group flex flex-col items-center gap-1 p-2 transition-all"
+                   >
+                     <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-text-muted group-hover:text-white transition-colors">
+                       {isSelectPositionExpanded ? "Show Less" : "Show More"}
+                     </span>
+                     <motion.div
+                       animate={{
+                         rotate: isSelectPositionExpanded ? 180 : 0,
+                         y: isSelectPositionExpanded ? 1 : 0
+                       }}
+                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     >
+                       <ChevronDown className="w-4 h-4 text-brand-text-muted group-hover:text-white transition-colors" />
+                     </motion.div>
+                   </button>
+                 </div>
+               )}
             </div>
          </div>
       )}
