@@ -1414,6 +1414,24 @@ const ERC20Form = ({ onDeployed }: any) => {
   const [loading, setLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<"success" | "failed" | null>(null);
+  const [deployDaily, setDeployDaily] = useState<number>(0);
+
+  const refreshDeployDaily = async () => {
+    if (!address) return;
+    try {
+      const p = await readPoints(address);
+      setDeployDaily(Number(p.deployDaily));
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    refreshDeployDaily();
+    const onRefresh = () => refreshDeployDaily();
+    window.addEventListener("litdex:points-refresh", onRefresh);
+    return () => window.removeEventListener("litdex:points-refresh", onRefresh);
+  }, [address]);
+
+  const capReachedDisplay = deployDaily >= 100;
 
   const handleDeploy = async () => {
     if (!name || !symbol || !supply) { showError("Please fill all fields"); return; }
@@ -1454,7 +1472,7 @@ const ERC20Form = ({ onDeployed }: any) => {
       } catch { /* ignore */ }
 
       setTimeout(async () => {
-        try { if (address) await readPoints(address); } catch { /* ignore */ }
+        try { if (address) await refreshDeployDaily(); } catch { /* ignore */ }
         refreshPoints();
         const capReached = dailyBefore >= 100n;
         if (capReached) {
