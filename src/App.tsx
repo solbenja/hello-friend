@@ -3443,9 +3443,6 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const pointsToday = Number(stats?.pointsEarnedToday ?? 0);
   const totalPoints = Number(stats?.totalPointsEarned ?? user?.total_points ?? 0);
   const cu = convertStats?.user || convertStats || {};
-  const zkConvertedToday = Number(
-    cu.zkltcConvertedToday ?? cu.totalZkltcReceivedToday ?? cu.todayZkltcReceived ?? cu.zkltcReceivedToday ?? 0
-  );
   const zkConvertedTotal = Number(cu.totalZkltcReceived ?? cu.zkltcReceivedTotal ?? 0);
   const gamesLeft = (stats?.gamesLeft ?? Math.max(0, 100 - (stats?.gamesPlayedToday ?? 0))) as number;
   const gamesToday = stats?.gamesPlayedToday ?? stats?.gamesToday ?? Math.max(0, 100 - gamesLeft);
