@@ -46,7 +46,7 @@
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
     z-index: 4;
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23e0e8f0'/%3E%3Cstop offset='100%25' stop-color='%23a0aab8'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23654321'/%3E%3Cstop offset='50%25' stop-color='%238B6914'/%3E%3Cstop offset='100%25' stop-color='%23654321'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform='rotate(-45 16 16)'%3E%3Crect x='14' y='2' width='4' height='16' rx='1' fill='url(%23b)' stroke='%23889' stroke-width='0.5'/%3E%3Cline x1='16' y1='3' x2='16' y2='17' stroke='%23fff' stroke-width='0.5' opacity='0.5'/%3E%3Crect x='13' y='17' width='6' height='2' rx='0.5' fill='%23999'/%3E%3Crect x='12.5' y='19' width='7' height='8' rx='1.5' fill='url(%23h)' stroke='%23543210' stroke-width='0.5'/%3E%3Cline x1='14' y1='20' x2='14' y2='26' stroke='%23765432' stroke-width='0.4' opacity='0.6'/%3E%3Cline x1='18' y1='20' x2='18' y2='26' stroke='%23765432' stroke-width='0.4' opacity='0.6'/%3E%3Ccircle cx='16' cy='18.5' r='0.8' fill='%23bbb'/%3E%3C/g%3E%3C/svg%3E") 2 2, crosshair;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23e0e8f0'/%3E%3Cstop offset='100%25' stop-color='%23a0aab8'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23222'/%3E%3Cstop offset='50%25' stop-color='%23444'/%3E%3Cstop offset='100%25' stop-color='%23222'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform='rotate(-45 16 16)'%3E%3Crect x='14' y='2' width='4' height='16' rx='1' fill='url(%23b)' stroke='%23889' stroke-width='0.5'/%3E%3Cline x1='16' y1='3' x2='16' y2='17' stroke='%23fff' stroke-width='0.5' opacity='0.5'/%3E%3Crect x='13' y='17' width='6' height='2' rx='0.5' fill='%23999'/%3E%3Crect x='12.5' y='19' width='7' height='8' rx='1.5' fill='url(%23h)' stroke='%23111' stroke-width='0.5'/%3E%3Cline x1='14' y1='20' x2='14' y2='26' stroke='%23333' stroke-width='0.4' opacity='0.6'/%3E%3Cline x1='18' y1='20' x2='18' y2='26' stroke='%23333' stroke-width='0.4' opacity='0.6'/%3E%3Ccircle cx='16' cy='18.5' r='0.8' fill='%23bbb'/%3E%3C/g%3E%3C/svg%3E") 2 2, crosshair;
   }
 
   /* ── TARGET NUMBER DISPLAY ── */
@@ -55,24 +55,24 @@
     top: 0; left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    background: linear-gradient(180deg, rgba(20,40,80,0.92) 0%, rgba(10,20,50,0.85) 80%, transparent 100%);
+    background: linear-gradient(180deg, rgba(20,20,20,0.92) 0%, rgba(10,10,10,0.85) 80%, transparent 100%);
     padding: 10px 40px 22px;
     border-radius: 0 0 28px 28px;
-    border: 2px solid rgba(100,180,255,0.25);
+    border: 2px solid rgba(255,255,255,0.15);
     border-top: none;
-    box-shadow: 0 4px 30px rgba(60,120,255,0.3), inset 0 0 30px rgba(60,120,255,0.08);
+    box-shadow: 0 4px 30px rgba(255,255,255,0.08), inset 0 0 30px rgba(255,255,255,0.04);
     min-width: 220px;
     animation: bannerGlow 2s ease-in-out infinite;
   }
   @keyframes bannerGlow {
-    0%, 100% { box-shadow: 0 4px 30px rgba(60,120,255,0.3), inset 0 0 30px rgba(60,120,255,0.08); }
-    50% { box-shadow: 0 4px 45px rgba(80,150,255,0.5), inset 0 0 40px rgba(80,150,255,0.12); }
+    0%, 100% { box-shadow: 0 4px 30px rgba(255,255,255,0.08), inset 0 0 30px rgba(255,255,255,0.04); }
+    50% { box-shadow: 0 4px 45px rgba(255,255,255,0.14), inset 0 0 40px rgba(255,255,255,0.06); }
   }
 
   .target-label {
     font-family: 'Fredoka One', cursive;
     font-size: 15px;
-    color: rgba(150,200,255,0.8);
+    color: rgba(255,255,255,0.7);
     letter-spacing: 5px;
     text-transform: uppercase;
   }
@@ -82,23 +82,23 @@
     font-size: clamp(58px, 12vw, 92px);
     color: #fff;
     text-shadow: 
-      0 0 25px rgba(100,200,255,0.9),
-      0 0 60px rgba(80,150,255,0.5),
+      0 0 25px rgba(255,255,255,0.6),
+      0 0 60px rgba(255,255,255,0.25),
       0 4px 8px rgba(0,0,0,0.8);
     line-height: 1;
     transition: transform 0.2s, color 0.2s;
     animation: numberPulse 2.5s ease-in-out infinite;
   }
   @keyframes numberPulse {
-    0%, 100% { text-shadow: 0 0 25px rgba(100,200,255,0.9), 0 0 60px rgba(80,150,255,0.5), 0 4px 8px rgba(0,0,0,0.8); }
-    50% { text-shadow: 0 0 35px rgba(120,220,255,1), 0 0 80px rgba(100,180,255,0.7), 0 4px 8px rgba(0,0,0,0.8); }
+    0%, 100% { text-shadow: 0 0 25px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.25), 0 4px 8px rgba(0,0,0,0.8); }
+    50% { text-shadow: 0 0 35px rgba(255,255,255,0.8), 0 0 80px rgba(255,255,255,0.35), 0 4px 8px rgba(0,0,0,0.8); }
   }
 
   .target-number.correct-flash {
     animation: targetFlash 0.4s ease-out;
   }
   @keyframes targetFlash {
-    0% { transform: scale(1.35); color: #44ff88; text-shadow: 0 0 40px rgba(68,255,136,0.9); }
+    0% { transform: scale(1.35); color: #ffffff; text-shadow: 0 0 40px rgba(255,255,255,0.9); }
     100% { transform: scale(1); color: #fff; }
   }
 
@@ -107,9 +107,9 @@
   }
   @keyframes targetShake {
     0%, 100% { transform: translateX(0); color: #fff; }
-    20% { transform: translateX(-14px); color: #ff4444; }
-    40% { transform: translateX(14px); color: #ff4444; }
-    60% { transform: translateX(-8px); color: #ff6666; }
+    20% { transform: translateX(-14px); color: #ffffff; }
+    40% { transform: translateX(14px); color: #ffffff; }
+    60% { transform: translateX(-8px); color: #cccccc; }
     80% { transform: translateX(8px); }
   }
 
@@ -135,7 +135,7 @@
   .tut-target-demo {
     font-family: 'Fredoka One', cursive;
     font-size: 20px;
-    color: rgba(150,200,255,0.8);
+    color: rgba(255,255,255,0.7);
     letter-spacing: 3px;
     margin-bottom: 4px;
   }
@@ -170,14 +170,14 @@
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
   .tut-fruit-circle.good {
-    background: linear-gradient(135deg, #22884a, #2d7a2d);
-    box-shadow: 0 0 15px rgba(68,255,136,0.4);
-    border: 2px solid rgba(68,255,136,0.5);
+    background: #0a0a0a; border-color:#ffffff;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.6);
   }
   .tut-fruit-circle.bad {
-    background: linear-gradient(135deg, #882222, #993333);
-    box-shadow: 0 0 15px rgba(255,60,60,0.3);
-    border: 2px solid rgba(255,60,60,0.4);
+    background: #0a0a0a;
+    box-shadow: 0 0 15px rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.25);
   }
 
   .tut-label {
@@ -185,8 +185,8 @@
     font-size: 16px;
     letter-spacing: 1px;
   }
-  .tut-label.good { color: #44ff88; }
-  .tut-label.bad { color: #ff5555; }
+  .tut-label.good { color: #ffffff; }
+  .tut-label.bad { color: #777777; }
 
   .tut-arrow {
     font-size: 36px;
@@ -205,13 +205,13 @@
     font-family: 'Fredoka One', cursive;
     font-size: 24px;
     color: #fff;
-    background: linear-gradient(135deg, #44bb66, #22aa44);
+    background: #ffffff; color: #000000;
     border: none;
     padding: 12px 44px;
     border-radius: 50px;
     cursor: pointer;
     letter-spacing: 2px;
-    box-shadow: 0 4px 20px rgba(60,200,100,0.4);
+    box-shadow: 0 4px 20px rgba(255,255,255,0.15);
     transition: transform 0.15s;
   }
   .tut-btn:hover { transform: scale(1.06); }
@@ -229,15 +229,15 @@
   .hud-score {
     color: #fff;
     font-size: 42px;
-    text-shadow: 0 0 10px rgba(255,200,0,0.8), 0 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 0 10px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.8);
     letter-spacing: 2px;
   }
 
   .hud-streak {
     font-family: 'Fredoka One', cursive;
     font-size: 22px;
-    color: #ffcc00;
-    text-shadow: 0 0 8px rgba(255,200,0,0.5);
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.3);
     opacity: 0;
     transition: opacity 0.2s;
     margin-top: -4px;
@@ -246,7 +246,7 @@
   .hud-level {
     font-family: 'Fredoka One', cursive;
     font-size: 16px;
-    color: rgba(150,200,255,0.7);
+    color: rgba(255,255,255,0.5);
     margin-top: 4px;
     letter-spacing: 2px;
   }
@@ -258,7 +258,7 @@
 
   .heart {
     font-size: 28px;
-    filter: drop-shadow(0 0 4px rgba(255,50,80,0.6));
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
     transition: transform 0.2s, opacity 0.3s;
   }
   .heart.lost {
@@ -287,13 +287,13 @@
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
   }
   .progress-dot.filled {
-    background: #44ff88;
-    box-shadow: 0 0 8px rgba(68,255,136,0.6);
+    background: #ffffff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.4);
     transform: scale(1.2);
   }
   .progress-dot.current {
-    background: rgba(100,200,255,0.6);
-    box-shadow: 0 0 8px rgba(100,200,255,0.4);
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 0 8px rgba(255,255,255,0.3);
     animation: dotPulse 1s ease-in-out infinite;
   }
   @keyframes dotPulse {
@@ -313,7 +313,7 @@
   .screen.hidden { opacity: 0; pointer-events: none; }
 
   #start-screen {
-    background: radial-gradient(ellipse at center, rgba(5,10,30,0.75) 0%, rgba(0,0,0,0.92) 100%);
+    background: radial-gradient(ellipse at center, rgba(20,20,20,0.85) 0%, rgba(0,0,0,0.95) 100%);
   }
 
   .game-title {
@@ -321,22 +321,22 @@
     font-size: clamp(44px, 9vw, 88px);
     color: #fff;
     text-shadow: 
-      0 0 20px rgba(80,180,255,0.9),
-      0 0 60px rgba(60,120,255,0.5),
+      0 0 20px rgba(255,255,255,0.5),
+      0 0 60px rgba(255,255,255,0.2),
       0 4px 8px rgba(0,0,0,0.8);
     letter-spacing: 3px;
     margin-bottom: 4px;
     animation: titlePulse 2.5s ease-in-out infinite;
   }
   @keyframes titlePulse {
-    0%, 100% { text-shadow: 0 0 20px rgba(80,180,255,0.9), 0 0 60px rgba(60,120,255,0.5), 0 4px 8px rgba(0,0,0,0.8); }
-    50% { text-shadow: 0 0 30px rgba(100,200,255,1), 0 0 80px rgba(80,150,255,0.7), 0 4px 8px rgba(0,0,0,0.8); }
+    0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 60px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.8); }
+    50% { text-shadow: 0 0 30px rgba(255,255,255,0.7), 0 0 80px rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.8); }
   }
 
   .game-subtitle {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(14px, 2.5vw, 22px);
-    color: rgba(150,220,255,0.6);
+    color: rgba(255,255,255,0.5);
     letter-spacing: 6px;
     margin-bottom: 12px;
   }
@@ -356,38 +356,38 @@
     font-family: 'Fredoka One', cursive;
     font-size: 28px;
     color: #fff;
-    background: linear-gradient(135deg, #3388ff, #5544ff);
+    background: #ffffff; color:#000000;
     border: none;
     padding: 14px 52px;
     border-radius: 60px;
     cursor: pointer;
     letter-spacing: 3px;
-    box-shadow: 0 4px 20px rgba(60,100,255,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 4px 20px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.4);
     transition: transform 0.15s, box-shadow 0.15s;
   }
   .start-btn:hover {
     transform: scale(1.06);
-    box-shadow: 0 6px 30px rgba(60,100,255,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 6px 30px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,0.4);
   }
   .start-btn:active { transform: scale(0.97); }
 
   #gameover-screen {
-    background: radial-gradient(ellipse at center, rgba(20,5,40,0.85) 0%, rgba(0,0,0,0.95) 100%);
+    background: radial-gradient(ellipse at center, rgba(20,20,20,0.85) 0%, rgba(0,0,0,0.95) 100%);
   }
 
   .go-title {
     font-family: 'Permanent Marker', cursive;
     font-size: clamp(36px, 7vw, 64px);
-    color: #ff6644;
-    text-shadow: 0 0 20px rgba(255,80,40,0.7), 0 4px 8px rgba(0,0,0,0.8);
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.8);
     margin-bottom: 8px;
   }
 
   .go-score {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(26px, 5vw, 44px);
-    color: #ffcc00;
-    text-shadow: 0 0 10px rgba(255,200,0,0.5);
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
     margin-bottom: 4px;
   }
 
@@ -411,8 +411,8 @@
     transform: translate(-50%, -50%);
     font-family: 'Permanent Marker', cursive;
     font-size: clamp(40px, 8vw, 72px);
-    color: #44ff88;
-    text-shadow: 0 0 30px rgba(68,255,136,0.8), 0 0 60px rgba(40,200,100,0.4), 0 4px 8px rgba(0,0,0,0.8);
+    color: #ffffff;
+    text-shadow: 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.25), 0 4px 8px rgba(0,0,0,0.8);
     pointer-events: none;
     z-index: 6;
     opacity: 0;
@@ -434,7 +434,7 @@
     transform: translateX(-50%);
     font-family: 'Fredoka One', cursive;
     font-size: 20px;
-    color: rgba(150,255,200,0.8);
+    color: rgba(255,255,255,0.7);
     pointer-events: none;
     z-index: 6;
     opacity: 0;
@@ -456,17 +456,17 @@
     white-space: nowrap;
   }
   .score-popup.correct {
-    color: #44ff88;
-    text-shadow: 0 0 12px rgba(68,255,136,0.8), 0 2px 4px rgba(0,0,0,0.6);
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.6);
   }
   .score-popup.wrong {
-    color: #ff4444;
-    text-shadow: 0 0 12px rgba(255,60,60,0.8), 0 2px 4px rgba(0,0,0,0.6);
+    color: #888888;
+    text-shadow: 0 0 12px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6);
   }
   .score-popup.streak {
     font-size: 48px;
-    color: #ffcc00;
-    text-shadow: 0 0 16px rgba(255,200,0,0.9), 0 0 40px rgba(255,150,0,0.4), 0 2px 4px rgba(0,0,0,0.6);
+    color: #ffffff;
+    text-shadow: 0 0 16px rgba(255,255,255,0.6), 0 0 40px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6);
   }
 
   @keyframes popUp {
@@ -481,7 +481,7 @@
     font-family: 'Fredoka One', cursive;
     font-size: 56px;
     color: #fff;
-    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(100,200,255,0.4);
+    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.3);
     pointer-events: none;
     z-index: 5;
     animation: revealAnim 1s ease-out forwards;
@@ -561,7 +561,7 @@
       <div class="game-subtitle">LITDEX EDITION</div>
       <div class="game-desc">Connect your wallet to play. Requires a LitDeXNFTv2 NFT.</div>
       <button class="start-btn" id="connect-btn">CONNECT WALLET</button>
-      <div id="wallet-error" style="font-family:'Fredoka One',cursive;color:#ff6655;margin-top:16px;font-size:15px;text-align:center;max-width:340px;display:none;"></div>
+      <div id="wallet-error" style="font-family:'Fredoka One',cursive;color:#ffffff;margin-top:16px;font-size:15px;text-align:center;max-width:340px;display:none;"></div>
     </div>
 
     <!-- ── START SCREEN (shown after wallet connected) ── -->
@@ -571,39 +571,39 @@
 
       <!-- Wallet Info Card -->
       <div id="wallet-card" style="
-        background: rgba(20,40,80,0.85);
-        border: 1px solid rgba(100,180,255,0.25);
+        background: rgba(15,15,15,0.9);
+        border: 1px solid rgba(255,255,255,0.12);
         border-radius: 16px;
         padding: 14px 26px;
         margin-bottom: 18px;
         min-width: 280px;
         text-align: center;
       ">
-        <div style="font-family:'Fredoka One',cursive;font-size:13px;color:rgba(150,200,255,0.6);letter-spacing:3px;margin-bottom:6px;">CONNECTED WALLET</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:3px;margin-bottom:6px;">CONNECTED WALLET</div>
         <div id="wallet-addr" style="font-family:'Fredoka One',cursive;font-size:15px;color:#fff;"></div>
 
         <div style="display:flex;gap:18px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
           <div style="text-align:center;">
-            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">NFT TIER</div>
-            <div id="nft-tier-label" style="font-family:'Bangers',cursive;font-size:20px;color:#ffcc00;">—</div>
+            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:2px;margin-bottom:2px;">NFT TIER</div>
+            <div id="nft-tier-label" style="font-family:'Bangers',cursive;font-size:20px;color:#ffffff;">—</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">GAME COST</div>
-            <div id="game-cost-label" style="font-family:'Bangers',cursive;font-size:20px;color:#44ff88;">— PTS</div>
+            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:2px;margin-bottom:2px;">GAME COST</div>
+            <div id="game-cost-label" style="font-family:'Bangers',cursive;font-size:20px;color:#ffffff;">— PTS</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">GAMES LEFT</div>
+            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:2px;margin-bottom:2px;">GAMES LEFT</div>
             <div id="games-left-label" style="font-family:'Bangers',cursive;font-size:20px;color:#fff;">—</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">POINTS EARNED</div>
-            <div id="zk-earned-label" style="font-family:'Bangers',cursive;font-size:20px;color:#cc88ff;">0</div>
+            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:2px;margin-bottom:2px;">POINTS EARNED</div>
+            <div id="zk-earned-label" style="font-family:'Bangers',cursive;font-size:20px;color:#ffffff;">0</div>
           </div>
         </div>
       </div>
 
       <button class="start-btn" id="start-btn" style="opacity:0.5;pointer-events:none;">LOADING…</button>
-      <div id="start-error" style="font-family:'Fredoka One',cursive;color:#ff6655;margin-top:14px;font-size:14px;text-align:center;max-width:340px;display:none;"></div>
+      <div id="start-error" style="font-family:'Fredoka One',cursive;color:#ffffff;margin-top:14px;font-size:14px;text-align:center;max-width:340px;display:none;"></div>
     </div>
 
     <!-- ── GAME OVER SCREEN ── -->
@@ -616,22 +616,22 @@
 
       <!-- zkLTC reward summary -->
       <div id="reward-card" style="
-        background: rgba(30,15,60,0.9);
-        border: 1px solid rgba(180,100,255,0.3);
+        background: rgba(15,15,15,0.9);
+        border: 1px solid rgba(255,255,255,0.12);
         border-radius: 14px;
         padding: 12px 28px;
         margin-bottom: 20px;
         text-align:center;
         display:none;
       ">
-        <div style="font-family:'Fredoka One',cursive;font-size:13px;color:rgba(200,150,255,0.65);letter-spacing:3px;margin-bottom:4px;">REWARD</div>
-        <div id="go-zk-earned" style="font-family:'Bangers',cursive;font-size:30px;color:#cc88ff;text-shadow:0 0 12px rgba(180,80,255,0.6);">0 zkLTC</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:3px;margin-bottom:4px;">REWARD</div>
+        <div id="go-zk-earned" style="font-family:'Bangers',cursive;font-size:30px;color:#ffffff;text-shadow:0 0 12px rgba(255,255,255,0.3);">0 zkLTC</div>
         <div id="go-games-left" style="font-family:'Fredoka One',cursive;font-size:13px;color:rgba(255,255,255,0.4);margin-top:4px;"></div>
-        <div id="go-tx-hash" style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.4);margin-top:4px;word-break:break-all;display:none;"></div>
+        <div id="go-tx-hash" style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;word-break:break-all;display:none;"></div>
       </div>
 
       <button class="start-btn" id="restart-btn">PLAY AGAIN</button>
-      <div id="go-error" style="font-family:'Fredoka One',cursive;color:#ff6655;margin-top:12px;font-size:13px;text-align:center;max-width:340px;display:none;"></div>
+      <div id="go-error" style="font-family:'Fredoka One',cursive;color:#ffffff;margin-top:12px;font-size:13px;text-align:center;max-width:340px;display:none;"></div>
     </div>
   </div>
 
@@ -645,13 +645,13 @@
     opacity:0; transition:opacity 0.4s;
   ">
     <div style="text-align:center;">
-      <div style="font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;">GAMES LEFT</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:2px;">GAMES LEFT</div>
       <div id="hud-games-left" style="font-size:18px;color:#fff;font-family:'Bangers',cursive;">—</div>
     </div>
     <div style="width:1px;height:32px;background:rgba(255,255,255,0.15);"></div>
     <div style="text-align:center;">
-      <div style="font-size:11px;color:rgba(200,150,255,0.6);letter-spacing:2px;">zkLTC TODAY</div>
-      <div id="hud-zk-today" style="font-size:18px;color:#cc88ff;font-family:'Bangers',cursive;">0</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;">zkLTC TODAY</div>
+      <div id="hud-zk-today" style="font-size:18px;color:#ffffff;font-family:'Bangers',cursive;">0</div>
     </div>
   </div>
 </div>
@@ -670,14 +670,14 @@
   const COMBO_WINDOW = 800;
 
   const FRUIT_VISUALS = [
-    { name:'watermelon', color:0x2d7a2d, innerColor:0xff3355, radius:0.82 },
-    { name:'orange',     color:0xff8800, innerColor:0xffaa33, radius:0.68 },
-    { name:'apple',      color:0xcc1122, innerColor:0xffffcc, radius:0.66 },
-    { name:'lemon',      color:0xeedd00, innerColor:0xffff99, radius:0.60 },
-    { name:'kiwi',       color:0x7a5533, innerColor:0x88cc44, radius:0.56 },
-    { name:'mango',      color:0xffaa00, innerColor:0xffdd44, radius:0.66 },
-    { name:'peach',      color:0xffaa88, innerColor:0xffddaa, radius:0.62 },
-    { name:'grape',      color:0x8833aa, innerColor:0xcc88ff, radius:0.58 },
+    { name:'a', color:0x1a1a1a, innerColor:0xffffff, radius:0.82 },
+    { name:'b', color:0x222222, innerColor:0xeeeeee, radius:0.68 },
+    { name:'c', color:0x2a2a2a, innerColor:0xdddddd, radius:0.66 },
+    { name:'d', color:0x141414, innerColor:0xffffff, radius:0.60 },
+    { name:'e', color:0x1f1f1f, innerColor:0xcccccc, radius:0.56 },
+    { name:'f', color:0x262626, innerColor:0xffffff, radius:0.66 },
+    { name:'g', color:0x181818, innerColor:0xeeeeee, radius:0.62 },
+    { name:'h', color:0x1c1c1c, innerColor:0xdddddd, radius:0.58 },
   ];
 
   // ── LEVEL DEFINITIONS ──
@@ -875,9 +875,9 @@
       uniform float uTime;
       varying vec2 vUv;
       void main(){
-        vec3 top = vec3(0.01, 0.02, 0.08);
-        vec3 mid = vec3(0.04, 0.02, 0.07);
-        vec3 bot = vec3(0.08, 0.03, 0.04);
+        vec3 top = vec3(0.0, 0.0, 0.0);
+        vec3 mid = vec3(0.02, 0.02, 0.02);
+        vec3 bot = vec3(0.04, 0.04, 0.04);
         float t = vUv.y;
         vec3 col = mix(bot, mid, smoothstep(0.0,0.5,t));
         col = mix(col, top, smoothstep(0.5,1.0,t));
@@ -901,13 +901,13 @@
   camera.lookAt(0, 2, 0);
 
   // Lights
-  scene.add(new THREE.AmbientLight(0x445566, 0.7));
-  const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   dirLight.position.set(5, 10, 8);
   dirLight.castShadow = true;
   scene.add(dirLight);
-  scene.add(new THREE.DirectionalLight(0x6688ff, 0.35).translateX(-5).translateY(3).translateZ(-5));
-  const pointLight = new THREE.PointLight(0x4488ff, 0.5, 20);
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.3).translateX(-5).translateY(3).translateZ(-5));
+  const pointLight = new THREE.PointLight(0xffffff, 0.4, 20);
   pointLight.position.set(0, -2, 6);
   scene.add(pointLight);
 
@@ -956,7 +956,7 @@
 
     ctx.beginPath();
     ctx.arc(128, 128, 110, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(68,255,136,0.9)';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fill();
 
     ctx.font = 'bold 90px "Fredoka One", Arial, sans-serif';
@@ -989,7 +989,7 @@
     // Stem
     const stem = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.03, 0.14, 8),
-      new THREE.MeshStandardMaterial({ color: 0x3a2a10, roughness: 0.8 })
+      new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 })
     );
     stem.position.y = visual.radius * 0.88;
     mesh.add(stem);
@@ -1044,8 +1044,8 @@
   function spawnStars(pos, count) {
     for (let i = 0; i < count; i++) {
       const size = 0.06 + Math.random()*0.06;
-      const hue = Math.random()*0.15 + 0.1; // gold-green
-      const col = new THREE.Color().setHSL(hue, 1, 0.6 + Math.random()*0.3);
+      const hue = 0;
+      const col = new THREE.Color().setHSL(hue, 0, 0.8 + Math.random()*0.2);
       const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1 });
       const geo = new THREE.OctahedronGeometry(size, 0);
       const mesh = new THREE.Mesh(geo, mat);
@@ -1069,7 +1069,7 @@
   function spawnRedX(pos) {
     for (let i = 0; i < 15; i++) {
       const size = 0.05 + Math.random()*0.07;
-      const mat = new THREE.MeshBasicMaterial({ color: 0xff2222, transparent: true, opacity: 1 });
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 6, 6), mat);
       mesh.position.copy(pos);
       scene.add(mesh);
@@ -1099,7 +1099,7 @@
       bCtx.beginPath();
       const widths = [20, 10, 3];
       const alphas = [0.06, 0.2, 0.85];
-      const colors = ['150,200,255', '180,220,255', '255,255,255'];
+      const colors = ['200,200,200', '230,230,230', '255,255,255'];
       bCtx.lineWidth = widths[pass];
       bCtx.lineCap = 'round'; bCtx.lineJoin = 'round';
       for (let i = 0; i < bladeTrail.length; i++) {
@@ -1187,7 +1187,7 @@
     const isRight = eq.answer === roundData.target;
     const sprite = createLabelSprite(
       eq.text,
-      'rgba(15,20,40,0.88)',
+      'rgba(10,10,10,0.92)',
       '#ffffff'
     );
     sprite.position.y = 0;
@@ -1667,7 +1667,7 @@ const LitDeX = (() => {
   const CHAIN = '0x115D'; // 4441 in hex
 
   const NFT_TIERS = { 0: '—', 1: 'COMMON', 2: 'RARE', 3: 'EPIC' };
-  const TIER_COLORS = { 0: '#888', 1: '#aabbcc', 2: '#44bbff', 3: '#ffcc00' };
+  const TIER_COLORS = { 0: '#666', 1: '#999', 2: '#ccc', 3: '#fff' };
 
   let walletAddress  = null;
   let activeSession  = null;  // { sessionId, cost, bonusPoints }
@@ -1776,10 +1776,10 @@ const LitDeX = (() => {
       if (costLabel) {
         if (data.isFree) {
           costLabel.textContent = 'FREE ✨';
-          costLabel.style.color = '#44ff88';
+          costLabel.style.color = '#ffffff';
         } else {
           costLabel.textContent = `${data.gameCost} PTS`;
-          costLabel.style.color = '#44ff88';
+          costLabel.style.color = '#ffffff';
         }
       }
 
