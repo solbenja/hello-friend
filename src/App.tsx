@@ -3243,6 +3243,12 @@ const RATE_BY_TIER: Record<string, number> = {
   epic: 0.0000999,
 };
 
+const TIER_NAMES: Record<number, string> = { 0: 'NONE', 1: 'COMMON', 2: 'RARE', 3: 'EPIC' };
+const tierKeyFromAny = (t: any): string => {
+  if (typeof t === 'number') return (TIER_NAMES[t] || 'NONE').toLowerCase();
+  return String(t ?? 'common').toLowerCase();
+};
+
 const ConvertPopup = ({ open, onClose, address, tier, points, onConverted }: any) => {
   const [val, setVal] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -3259,7 +3265,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted }: any
     return () => clearInterval(t);
   }, [cooldown]);
 
-  const tierKey = String(tier ?? "common").toLowerCase();
+  const tierKey = tierKeyFromAny(tier);
   const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
   const n = parseInt(val) || 0;
   const preview = (n * rate).toFixed(7);
@@ -3337,15 +3343,22 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted }: any
 const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const { address, isConnected } = useAccount();
   const [stats, setStats] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [board, setBoard] = useState<any>(null);
   const [convertOpen, setConvertOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
 
+  const lowerAddr = address ? address.toLowerCase() : '';
+
   const fetchStats = async () => {
-    if (!address) return;
+    if (!lowerAddr) return;
     try {
-      const r = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${address}`);
+      const r = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${lowerAddr}`);
       if (r.ok) setStats(await r.json());
+    } catch { /* ignore */ }
+    try {
+      const r2 = await fetch(`${MATHSLASH_API}/user/${lowerAddr}`);
+      if (r2.ok) setUser(await r2.json());
     } catch { /* ignore */ }
   };
   const fetchBoard = async () => {
@@ -3355,7 +3368,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { if (isConnected) fetchStats(); }, [isConnected, address]);
+  useEffect(() => { if (isConnected) fetchStats(); const t = setInterval(() => { if (isConnected) fetchStats(); }, 15000); return () => clearInterval(t); }, [isConnected, lowerAddr]);
   useEffect(() => {
     fetchBoard();
     const t = setInterval(fetchBoard, 60000);
@@ -3369,60 +3382,73 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   }, [playing]);
 
   const mask = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
-  const tier = stats?.nftTier || stats?.tier || 'common';
-  const points = stats?.points ?? stats?.totalPoints ?? 0;
-  const gamesToday = stats?.gamesToday ?? stats?.played ?? 0;
-  const gamesRemaining = stats?.gamesRemaining ?? Math.max(0, 100 - gamesToday);
+  const tierNum = (stats?.nftTier ?? user?.nft_tier ?? 0) as number;
+  const tierLabel = TIER_NAMES[tierNum] || 'NONE';
+  const tier = tierLabel.toLowerCase();
+  const points = (user?.total_points ?? user?.game_points ?? stats?.points ?? 0) as number;
+  const gamesLeft = (stats?.gamesLeft ?? Math.max(0, 100 - (stats?.gamesPlayedToday ?? 0))) as number;
+  const gamesToday = stats?.gamesPlayedToday ?? stats?.gamesToday ?? Math.max(0, 100 - gamesLeft);
+  const zkEarned = Number(stats?.totalZkLtcEarned ?? 0).toFixed(7);
+  const isFree = stats?.isFree ?? (tierNum >= 3);
+  const gameCost = stats?.gameCost ?? 0;
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 max-w-7xl mx-auto px-4">
-      <button onClick={onBack} className="font-mono text-[11px] uppercase text-[#555] hover:text-white mb-6">← Back to Games</button>
+      <button onClick={onBack} className="font-mono text-[11px] uppercase text-brand-text-muted hover:text-brand-text-primary mb-6">← Back to Games</button>
       {!isConnected ? (
-        <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#555' }}>
+        <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted">
           Connect your wallet using the navbar button to play
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-5">
           {/* Stats */}
-          <div className="p-5 rounded-2xl font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-            <div className="text-[11px] uppercase text-[#555] mb-4">Your Stats</div>
+          <div className="p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+            <div className="text-[11px] uppercase text-brand-text-muted mb-4">Your Stats</div>
             <div className="mb-3">
-              <div className="text-[10px] uppercase text-[#555] mb-1">NFT Tier</div>
-              <span className="inline-block px-2.5 py-1 rounded-full text-[11px] uppercase text-white" style={{ background: '#1a1a1a', border: '1px solid #1f1f1f' }}>{tier}</span>
+              <div className="text-[10px] uppercase text-brand-text-muted mb-1">NFT Tier</div>
+              <span className="inline-block px-2.5 py-1 rounded-full text-[11px] uppercase text-brand-text-primary bg-brand-surface-2 border border-brand-border">{tierLabel}</span>
             </div>
             <div className="mb-3">
-              <div className="text-[10px] uppercase text-[#555]">Games Today</div>
-              <div className="text-white text-sm">{gamesToday} / 100</div>
+              <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
+              <div className="text-brand-text-primary text-sm">{gamesToday} / 100</div>
             </div>
             <div className="mb-3">
-              <div className="text-[10px] uppercase text-[#555]">Games Remaining</div>
-              <div className="text-white text-sm">{gamesRemaining}</div>
+              <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
+              <div className="text-brand-text-primary text-sm">{gamesLeft}</div>
+            </div>
+            <div className="mb-3">
+              <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
+              <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
+            </div>
+            <div className="mb-3">
+              <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Earned Today</div>
+              <div className="text-brand-text-primary text-sm">{zkEarned}</div>
             </div>
             <button onClick={() => setConvertOpen(true)} className="w-full text-left mt-2">
-              <div className="text-[10px] uppercase text-[#555]">Points</div>
-              <div className="text-white text-2xl font-bold">{points}</div>
-              <div className="text-[#333] text-[10px] mt-1">tap to convert → zkLTC</div>
+              <div className="text-[10px] uppercase text-brand-text-muted">Points</div>
+              <div className="text-brand-text-primary text-2xl font-bold">{points}</div>
+              <div className="text-brand-text-muted opacity-60 text-[10px] mt-1">tap to convert → zkLTC</div>
             </button>
           </div>
 
           {/* Game */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+          <div className="rounded-2xl overflow-hidden bg-brand-surface border border-brand-border">
             {!playing ? (
               <div className="p-8 text-center">
-                <div className="font-mono text-white text-lg mb-2">MATH SLASH</div>
-                <div className="font-mono text-[#555] text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
-                <button onClick={() => setPlaying(true)} className="px-8 py-3 rounded-lg bg-white text-black font-mono font-bold text-sm">START GAME</button>
+                <div className="font-mono text-brand-text-primary text-lg mb-2">MATH SLASH</div>
+                <div className="font-mono text-brand-text-muted text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
+                <button onClick={() => setPlaying(true)} className="px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm">START GAME</button>
               </div>
             ) : (
               <div className="relative">
-                <button onClick={() => { setPlaying(false); fetchStats(); }} className="absolute top-2 right-2 z-10 px-3 py-1.5 rounded font-mono text-[11px] uppercase bg-black/70 text-white border border-white/10">Exit</button>
+                <button onClick={() => { setPlaying(false); fetchStats(); }} className="absolute top-2 right-2 z-10 px-3 py-1.5 rounded font-mono text-[11px] uppercase bg-brand-surface-2 text-brand-text-primary border border-brand-border">Exit</button>
                 <iframe
-                  src={`/games/math-slash.html?wallet=${address}`}
+                  src={`/games/math-slash.html?wallet=${lowerAddr}`}
                   title="Math Slash"
                   className="w-full"
-                  style={{ height: 600, border: 'none', background: '#000' }}
+                  style={{ height: 600, border: 'none' }}
                   allow="autoplay; fullscreen"
                 />
               </div>
@@ -3430,37 +3456,39 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           {/* Leaderboard */}
-          <div className="p-5 rounded-2xl font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-            <div className="text-[11px] uppercase text-white mb-1">Weekly Leaderboard</div>
-            {week && <div className="text-[10px] text-[#555] mb-3">Week: {week}</div>}
+          <div className="p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+            <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
+            {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
             {entries.length === 0 ? (
-              <div className="text-[#555] text-xs">No games this week yet</div>
+              <div className="text-brand-text-muted text-xs">No games this week yet</div>
             ) : (
               <table className="w-full text-[11px]">
                 <thead>
-                  <tr className="text-[#555]"><th className="text-left font-normal">#</th><th className="text-left font-normal">Wallet</th><th className="text-right font-normal">Score</th></tr>
+                  <tr className="text-brand-text-muted"><th className="text-left font-normal">#</th><th className="text-left font-normal">Wallet</th><th className="text-right font-normal">Score</th></tr>
                 </thead>
                 <tbody>
                   {entries.slice(0, 20).map((e: any, i: number) => {
-                    const c = i === 0 ? 'text-white font-bold' : i < 3 ? 'text-[#888]' : 'text-[#555]';
+                    const c = i === 0 ? 'text-brand-text-primary font-bold' : 'text-brand-text-muted';
+                    const w = e.wallet || e.walletAddress || e.address || '';
+                    const displayWallet = w.includes('...') ? w : mask(w);
                     return (
                       <tr key={i} className={c}>
                         <td className="py-1">{i + 1}</td>
-                        <td className="py-1">{mask(e.wallet || e.walletAddress || e.address || '')}</td>
-                        <td className="py-1 text-right">{e.score ?? e.points ?? 0}</td>
+                        <td className="py-1">{displayWallet}</td>
+                        <td className="py-1 text-right">{e.totalScore ?? e.score ?? e.points ?? 0}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             )}
-            <div className="mt-4 pt-3 border-t border-[#1f1f1f] text-[10px] text-[#444] space-y-0.5">
+            <div className="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-text-muted space-y-0.5">
               <div>Rank 1: 1 zkLTC + 2,000 pts</div>
               <div>Rank 2: 0.5 zkLTC + 1,000 pts</div>
               <div>Rank 3: 0.3 zkLTC + 500 pts</div>
               <div>Rank 4-10: 0.1 zkLTC + 200 pts</div>
               <div>Rank 11-20: 0.001 zkLTC + 100 pts</div>
-              <div className="pt-2 text-[#333]">Top 20 rewarded every Sunday midnight IST</div>
+              <div className="pt-2 opacity-70">Top 20 rewarded every Sunday midnight IST</div>
             </div>
           </div>
         </div>
@@ -3468,7 +3496,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       <ConvertPopup
         open={convertOpen}
         onClose={() => setConvertOpen(false)}
-        address={address}
+        address={lowerAddr}
         tier={tier}
         points={points}
         onConverted={fetchStats}
