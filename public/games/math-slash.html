@@ -596,7 +596,7 @@
             <div id="games-left-label" style="font-family:'Bangers',cursive;font-size:20px;color:#fff;">—</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">zkLTC EARNED</div>
+            <div style="font-family:'Fredoka One',cursive;font-size:11px;color:rgba(150,200,255,0.55);letter-spacing:2px;margin-bottom:2px;">POINTS EARNED</div>
             <div id="zk-earned-label" style="font-family:'Bangers',cursive;font-size:20px;color:#cc88ff;">0</div>
           </div>
         </div>
@@ -1787,15 +1787,16 @@ const LitDeX = (() => {
       const gamesLeftLabel = el('games-left-label');
       if (gamesLeftLabel) gamesLeftLabel.textContent = data.gamesLeft ?? '—';
 
-      // zkLTC earned today
+      // Points earned today
+      const pointsToday = Number(data.pointsEarnedToday ?? 0);
       const zkLabel = el('zk-earned-label');
-      if (zkLabel) zkLabel.textContent = totalZkToday.toFixed(7);
+      if (zkLabel) zkLabel.textContent = pointsToday;
 
       // In-game HUD
       const hudLeft = el('hud-games-left');
       const hudZk   = el('hud-zk-today');
       if (hudLeft) hudLeft.textContent = data.gamesLeft ?? '—';
-      if (hudZk)   hudZk.textContent   = totalZkToday.toFixed(7);
+      if (hudZk)   hudZk.textContent   = pointsToday;
 
       // Enable start button if NFT found
       const startBtn = el('start-btn');
