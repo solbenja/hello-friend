@@ -3235,144 +3235,269 @@ const QuestsPage = () => {
 };
 
 // --- Page: Games ---
-const GamesPage = () => {
-  const { address, isConnected } = useAccount();
-  const [gf, setGf] = useState<bigint>(0n);
-  const [claiming, setClaiming] = useState(false);
+const MATHSLASH_API = "https://game.test-hub.xyz";
 
-  const fetchGF = async () => {
-    if (!address) return;
-    try {
-      const { readGF } = await import('./lib/litdex-core-logic');
-      const val = await readGF(address);
-      setGf(val);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const RATE_BY_TIER: Record<string, number> = {
+  common: 0.0000769,
+  rare: 0.0000923,
+  epic: 0.0000999,
+};
+
+const ConvertPopup = ({ open, onClose, address, tier, points, onConverted }: any) => {
+  const [val, setVal] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [cooldown, setCooldown] = useState<number>(0);
 
   useEffect(() => {
-    if (isConnected && address) {
-      fetchGF();
-    }
-  }, [isConnected, address]);
+    if (!open) { setVal(""); setMsg(null); }
+  }, [open]);
 
-  const handleClaimGF = async () => {
-    setClaiming(true);
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  const tierKey = (tier || "common").toLowerCase();
+  const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
+  const n = parseInt(val) || 0;
+  const preview = (n * rate).toFixed(7);
+
+  const fmtCooldown = (s: number) => {
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${h}:${m}:${sec}`;
+  };
+
+  const handleConvert = async () => {
+    if (!address || n < 1 || n > 130) return;
+    setSubmitting(true);
+    setMsg(null);
     try {
-      const { claimGF } = await import('./lib/litdex-core-logic');
-      await claimGF();
-      showSuccess({ title: "GAMING FUEL CLAIMED", subtitle: "PROTOCOL VERIFICATION COMPLETE", rows: [{ label: "STATUS", value: "FUEL ADDED" }] });
-      try {
-        if (address) addNotif(address, {
-          type: "gf",
-          title: "Game Fuel Claimed",
-          message: `Game Fuel added to your balance`,
-        });
-      } catch { /* ignore */ }
-      fetchGF();
-    } catch (err) {
-      showError(errMsg(err));
+      const res = await fetch(`${MATHSLASH_API}/convert/convert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address, points: n }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data?.cooldownRemaining) setCooldown(Math.floor(data.cooldownRemaining));
+        setMsg({ type: 'err', text: data?.error || data?.message || `Error ${res.status}` });
+      } else {
+        setMsg({ type: 'ok', text: `✅ ${n} pts → ${preview} zkLTC sent!` });
+        setCooldown(24 * 3600);
+        onConverted?.();
+      }
+    } catch (e: any) {
+      setMsg({ type: 'err', text: e?.message || 'Network error' });
     } finally {
-      setClaiming(false);
+      setSubmitting(false);
     }
   };
 
-  const handleStartGame = async (gameId: string) => {
-     try {
-       const { startGame } = await import('./lib/litdex-core-logic');
-       await startGame(gameId);
-       showInfo("Game started! Redirecting...");
-       // Here you would normally redirect to the game canvas/route
-     } catch (err: any) {
-       showError(err.message || "Failed to start game");
-     }
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+      <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
+        <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
+        <p className="font-mono text-[11px] text-[#555] mb-4 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
+        <p className="font-mono text-[11px] text-[#555] mb-4">Your points: {points ?? 0}</p>
+        <input
+          type="number"
+          min={1}
+          max={130}
+          step={1}
+          value={val}
+          onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))}
+          placeholder="Enter points (1-130)"
+          className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2"
+        />
+        <div className="font-mono text-xs text-[#555] mb-4">{n} pts → {preview} zkLTC</div>
+        {cooldown > 0 && (
+          <div className="font-mono text-[11px] text-[#555] mb-3">Next convert in {fmtCooldown(cooldown)}</div>
+        )}
+        <button
+          onClick={handleConvert}
+          disabled={submitting || n < 1 || n > 130 || cooldown > 0}
+          className="w-full py-3 rounded-lg font-mono font-bold text-sm bg-white text-black disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {submitting ? 'CONVERTING…' : 'CONVERT'}
+        </button>
+        {msg && (
+          <div className={`mt-3 font-mono text-xs ${msg.type === 'ok' ? 'text-white' : 'text-red-400'}`}>{msg.text}</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
+  const { address, isConnected } = useAccount();
+  const [stats, setStats] = useState<any>(null);
+  const [board, setBoard] = useState<any>(null);
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [playing, setPlaying] = useState(false);
+
+  const fetchStats = async () => {
+    if (!address) return;
+    try {
+      const r = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${address}`);
+      if (r.ok) setStats(await r.json());
+    } catch { /* ignore */ }
+  };
+  const fetchBoard = async () => {
+    try {
+      const r = await fetch(`${MATHSLASH_API}/game/mathslash/weekly-leaderboard`);
+      if (r.ok) setBoard(await r.json());
+    } catch { /* ignore */ }
   };
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-3xl mx-auto px-4">
-      <Card className="p-12 bg-black/40 border-white/5 backdrop-blur-3xl shadow-2xl text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_60%)] pointer-events-none" />
-        <div className="relative z-10 flex flex-col items-center gap-6">
-          <div className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-white shadow-[0_0_40px_rgba(255,255,255,0.08)]">
-            <Lock size={44} strokeWidth={1.5} />
-          </div>
-          <h1 className="text-4xl font-black tracking-tighter text-white">Games Locked</h1>
-          <p className="text-brand-text-muted max-w-md text-sm leading-relaxed">
-            The gaming arena is being forged. Stay tuned — Gaming Fuel and rewards will go live soon.
-          </p>
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mt-2">Coming Soon</div>
-        </div>
-      </Card>
-    </motion.div>
-  );
+  useEffect(() => { if (isConnected) fetchStats(); }, [isConnected, address]);
+  useEffect(() => {
+    fetchBoard();
+    const t = setInterval(fetchBoard, 60000);
+    return () => clearInterval(t);
+  }, []);
 
-  // eslint-disable-next-line no-unreachable
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 max-w-6xl mx-auto px-4">
-      <Card className="p-10 mb-12 flex flex-col md:flex-row items-center justify-between gap-12 bg-black/40 text-center md:text-left border-white/5 backdrop-blur-xl group overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/[0.01] rounded-full blur-3xl -mr-48 -mt-48 transition-all group-hover:bg-white/[0.03]" />
-        
-        <div className="flex-1 relative z-10">
-          <h1 className="text-4xl font-bold mb-4 tracking-tighter text-white">GAMING FUEL (GF)</h1>
-          <p className="text-brand-text-muted mb-8 max-w-md">Every game on LitDeX consumes GF. Claim your daily allowance to climb the leaderboard.</p>
-          <div className="space-y-3 mb-8">
-             <div className="flex justify-between items-end">
-                <span className="text-[10px] font-bold text-white uppercase tracking-widest">Available Balance</span>
-                <span className="text-xs font-mono">{gf.toString()} GF</span>
-             </div>
-             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, Number(gf) / 5)}%` }}
-                  className="h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]" 
-                />
-             </div>
-          </div>
-          <button 
-            onClick={handleClaimGF}
-            disabled={!isConnected || claiming}
-            className="px-10 py-4 bg-white text-black rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(255,255,255,0.1)] disabled:opacity-50 mx-auto md:mx-0"
-          >
-            {claiming ? "Claiming..." : "Claim Daily GF"} <Plus size={16} />
-          </button>
-        </div>
-        <div className="w-64 h-64 rounded-full border border-white/5 flex items-center justify-center relative bg-white/[0.02] shadow-inner group-hover:rotate-12 transition-all duration-700">
-           <Gamepad2 size={100} className="text-white/20" />
-        </div>
-      </Card>
+  useEffect(() => {
+    if (playing) document.body.classList.add('hide-nav');
+    else document.body.classList.remove('hide-nav');
+    return () => document.body.classList.remove('hide-nav');
+  }, [playing]);
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="overflow-hidden group h-[450px] flex flex-col bg-black/40 border-white/5 hover:border-white/20 transition-all">
-          <div className="h-48 bg-white/5 flex items-center justify-center text-white/20 group-hover:text-white transition-colors">
-            <Gamepad2 size={80} />
-          </div>
-          <div className="p-8 flex-1 flex flex-col">
-            <h3 className="font-bold text-2xl mb-2 text-white">Retro-Forge</h3>
-            <p className="text-sm text-brand-text-muted mb-8 leading-relaxed">Dodge gas spikes and collect shards in this high-speed endless runner. Earn points with every meter.</p>
-            <button 
-              onClick={() => handleStartGame('retro-forge')}
-              className="mt-auto w-full py-4 bg-white/5 border border-white/10 rounded-xl font-bold text-xs uppercase tracking-widest text-brand-text-muted group-hover:bg-white group-hover:text-black group-hover:border-white transition-all shadow-xl shadow-transparent group-hover:shadow-white/5"
-            >
-              Play (50 GF)
+  const mask = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
+  const tier = stats?.nftTier || stats?.tier || 'common';
+  const points = stats?.points ?? stats?.totalPoints ?? 0;
+  const gamesToday = stats?.gamesToday ?? stats?.played ?? 0;
+  const gamesRemaining = stats?.gamesRemaining ?? Math.max(0, 100 - gamesToday);
+  const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
+  const week = board?.week || board?.currentWeek || '';
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 max-w-7xl mx-auto px-4">
+      <button onClick={onBack} className="font-mono text-[11px] uppercase text-[#555] hover:text-white mb-6">← Back to Games</button>
+      {!isConnected ? (
+        <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#555' }}>
+          Connect your wallet using the navbar button to play
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-5">
+          {/* Stats */}
+          <div className="p-5 rounded-2xl font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+            <div className="text-[11px] uppercase text-[#555] mb-4">Your Stats</div>
+            <div className="mb-3">
+              <div className="text-[10px] uppercase text-[#555] mb-1">NFT Tier</div>
+              <span className="inline-block px-2.5 py-1 rounded-full text-[11px] uppercase text-white" style={{ background: '#1a1a1a', border: '1px solid #1f1f1f' }}>{tier}</span>
+            </div>
+            <div className="mb-3">
+              <div className="text-[10px] uppercase text-[#555]">Games Today</div>
+              <div className="text-white text-sm">{gamesToday} / 100</div>
+            </div>
+            <div className="mb-3">
+              <div className="text-[10px] uppercase text-[#555]">Games Remaining</div>
+              <div className="text-white text-sm">{gamesRemaining}</div>
+            </div>
+            <button onClick={() => setConvertOpen(true)} className="w-full text-left mt-2">
+              <div className="text-[10px] uppercase text-[#555]">Points</div>
+              <div className="text-white text-2xl font-bold">{points}</div>
+              <div className="text-[#333] text-[10px] mt-1">tap to convert → zkLTC</div>
             </button>
           </div>
-        </Card>
-        
-        {[1, 2].map(i => (
-          <Card key={i} className="overflow-hidden h-[450px] relative grayscale opacity-40 bg-black/40 border-white/5">
-             <div className="h-48 bg-white/[0.02] border-b border-white/5 flex items-center justify-center">
-                <span className="text-5xl opacity-20">🔒</span>
-             </div>
-             <div className="p-8">
-                <h3 className="font-bold text-2xl mb-2 text-white">Coming Soon</h3>
-                <p className="text-sm text-brand-text-muted">A new gaming experience is being forged in the lab.</p>
-             </div>
-             <div className="absolute inset-x-8 bottom-8 text-center border-t border-white/5 pt-8">
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">Locked Expansion</p>
-             </div>
-          </Card>
-        ))}
+
+          {/* Game */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+            {!playing ? (
+              <div className="p-8 text-center">
+                <div className="font-mono text-white text-lg mb-2">MATH SLASH</div>
+                <div className="font-mono text-[#555] text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
+                <button onClick={() => setPlaying(true)} className="px-8 py-3 rounded-lg bg-white text-black font-mono font-bold text-sm">START GAME</button>
+              </div>
+            ) : (
+              <div className="relative">
+                <button onClick={() => { setPlaying(false); fetchStats(); }} className="absolute top-2 right-2 z-10 px-3 py-1.5 rounded font-mono text-[11px] uppercase bg-black/70 text-white border border-white/10">Exit</button>
+                <iframe
+                  src={`/games/math-slash.html?wallet=${address}`}
+                  title="Math Slash"
+                  className="w-full"
+                  style={{ height: 600, border: 'none', background: '#000' }}
+                  allow="autoplay; fullscreen"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Leaderboard */}
+          <div className="p-5 rounded-2xl font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+            <div className="text-[11px] uppercase text-white mb-1">Weekly Leaderboard</div>
+            {week && <div className="text-[10px] text-[#555] mb-3">Week: {week}</div>}
+            {entries.length === 0 ? (
+              <div className="text-[#555] text-xs">No games this week yet</div>
+            ) : (
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr className="text-[#555]"><th className="text-left font-normal">#</th><th className="text-left font-normal">Wallet</th><th className="text-right font-normal">Score</th></tr>
+                </thead>
+                <tbody>
+                  {entries.slice(0, 20).map((e: any, i: number) => {
+                    const c = i === 0 ? 'text-white font-bold' : i < 3 ? 'text-[#888]' : 'text-[#555]';
+                    return (
+                      <tr key={i} className={c}>
+                        <td className="py-1">{i + 1}</td>
+                        <td className="py-1">{mask(e.wallet || e.walletAddress || e.address || '')}</td>
+                        <td className="py-1 text-right">{e.score ?? e.points ?? 0}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            <div className="mt-4 pt-3 border-t border-[#1f1f1f] text-[10px] text-[#444] space-y-0.5">
+              <div>Rank 1: 1 zkLTC + 2,000 pts</div>
+              <div>Rank 2: 0.5 zkLTC + 1,000 pts</div>
+              <div>Rank 3: 0.3 zkLTC + 500 pts</div>
+              <div>Rank 4-10: 0.1 zkLTC + 200 pts</div>
+              <div>Rank 11-20: 0.001 zkLTC + 100 pts</div>
+              <div className="pt-2 text-[#333]">Top 20 rewarded every Sunday midnight IST</div>
+            </div>
+          </div>
+        </div>
+      )}
+      <ConvertPopup
+        open={convertOpen}
+        onClose={() => setConvertOpen(false)}
+        address={address}
+        tier={tier}
+        points={points}
+        onConverted={fetchStats}
+      />
+    </motion.div>
+  );
+};
+
+const GamesPage = () => {
+  const [sub, setSub] = useState<'lobby' | 'math-slash'>('lobby');
+  if (sub === 'math-slash') return <MathSlashPage onBack={() => setSub('lobby')} />;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 max-w-6xl mx-auto px-4">
+      <h1 className="text-3xl font-bold tracking-tighter text-white mb-8">Games</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+          <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+              <Gamepad2 size={32} className="text-white" />
+            </div>
+          </div>
+          <div className="p-6 flex-1 flex flex-col">
+            <h3 className="font-bold text-xl text-white mb-2">MATH SLASH</h3>
+            <p className="text-sm text-[#888] mb-6 leading-relaxed">Slash the equations. Earn points, convert to zkLTC.</p>
+            <button onClick={() => setSub('math-slash')} className="mt-auto w-full py-3 rounded-lg bg-white text-black font-mono font-bold text-xs uppercase tracking-widest">
+              Play Now
+            </button>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
