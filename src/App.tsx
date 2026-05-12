@@ -3503,12 +3503,8 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
               <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>
             </button>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted Today</div>
-              <div className="text-brand-text-primary text-sm">{zkConvertedToday.toFixed(7)}</div>
-            </div>
             <div className="mb-1">
-              <div className="text-[10px] uppercase text-brand-text-muted">Total zkLTC Converted</div>
+              <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted</div>
               <div className="text-brand-text-primary text-sm">{zkConvertedTotal.toFixed(7)}</div>
             </div>
           </div>
