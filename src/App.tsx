@@ -3252,11 +3252,12 @@ const tierKeyFromAny = (t: any): string => {
 const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initialCooldown = 0 }: any) => {
   const [val, setVal] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string } | null>(null);
+  const [errMsg, setErrMsg] = useState<string>("");
   const [cooldown, setCooldown] = useState<number>(0);
 
   useEffect(() => {
-    if (!open) { setVal(""); setMsg(null); }
+    if (!open) { setVal(""); setSuccess(null); setErrMsg(""); }
     else { setCooldown(Math.max(0, Math.floor(initialCooldown || 0))); }
   }, [open, initialCooldown]);
 
@@ -3283,7 +3284,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   const handleConvert = async () => {
     if (!address || n < 1 || n > MAX_POINTS) return;
     setSubmitting(true);
-    setMsg(null);
+    setErrMsg("");
     try {
       const res = await fetch(`${MATHSLASH_API}/convert/convert`, {
         method: 'POST',
@@ -3294,21 +3295,26 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
       if (!res.ok || data?.cooldown) {
         const cd = Number(data?.nextConvertIn ?? data?.cooldownRemaining ?? 0);
         if (cd > 0) setCooldown(Math.floor(cd));
-        setMsg({ type: 'err', text: data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`) });
+        setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
-        setMsg({ type: 'ok', text: `✅ Converted ${n} pts → ${preview} zkLTC` });
+        const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
+        const zkltc = data?.zkltcReceived ?? data?.zkltc ?? preview;
+        setSuccess({ pts: n, zkltc: String(zkltc), txHash });
         setCooldown(24 * 3600);
         onConverted?.();
         setTimeout(() => { onClose?.(); }, 3000);
       }
     } catch (e: any) {
-      setMsg({ type: 'err', text: e?.message || 'Network error' });
+      setErrMsg(e?.message || 'Network error');
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!open) return null;
+  const onCooldown = cooldown > 0;
+  const btnDisabled = submitting || n < 1 || n > MAX_POINTS || onCooldown;
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
       <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
@@ -3327,18 +3333,57 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
           className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2"
         />
         <div className="font-mono text-xs text-[#555] mb-4">{n} pts → {preview} zkLTC</div>
-        {cooldown > 0 && (
-          <div className="font-mono text-[11px] text-[#555] mb-3">Next convert in {fmtCooldown(cooldown)}</div>
+        {onCooldown && (
+          <div
+            className="font-mono text-[11px] mb-3"
+            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 8, color: '#555555' }}
+          >
+            Cooldown active — next convert in {fmtCooldown(cooldown)}
+          </div>
         )}
         <button
           onClick={handleConvert}
-          disabled={submitting || n < 1 || n > MAX_POINTS || cooldown > 0}
-          className="w-full py-3 rounded-lg font-mono font-bold text-sm bg-white text-black disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={btnDisabled}
+          className="w-full py-3 rounded-lg font-mono font-bold text-sm"
+          style={
+            onCooldown
+              ? { background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#333333', cursor: 'not-allowed' }
+              : btnDisabled
+              ? { background: '#ffffff', color: '#000000', opacity: 0.4, cursor: 'not-allowed' }
+              : { background: '#ffffff', color: '#000000' }
+          }
         >
           {submitting ? 'CONVERTING…' : 'CONVERT'}
         </button>
-        {msg && (
-          <div className={`mt-3 font-mono text-xs ${msg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>{msg.text}</div>
+        {success && (
+          <div
+            className="mt-3 font-mono text-xs"
+            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 12, color: '#fff' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Converted {success.pts} pts → {success.zkltc} zkLTC</span>
+            </div>
+            {success.txHash && (
+              <a
+                href={`https://liteforge.explorer.caldera.xyz/tx/${success.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block text-white underline font-mono text-[11px] truncate"
+                title={success.txHash}
+              >
+                {success.txHash}
+              </a>
+            )}
+          </div>
+        )}
+        {errMsg && !success && (
+          <div
+            className="mt-3 font-mono text-xs"
+            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 8, color: '#555555' }}
+          >
+            {errMsg}
+          </div>
         )}
       </div>
     </div>
