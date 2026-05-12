@@ -3268,8 +3268,10 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 
   const tierKey = tierKeyFromAny(tier);
   const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
+  const available = Number(points ?? 0);
   const n = parseInt(val) || 0;
   const preview = (n * rate).toFixed(7);
+  const MAX_POINTS = 10000;
 
   const fmtCooldown = (s: number) => {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
@@ -3279,7 +3281,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   };
 
   const handleConvert = async () => {
-    if (!address || n < 1 || n > 130) return;
+    if (!address || n < 1 || n > MAX_POINTS) return;
     setSubmitting(true);
     setMsg(null);
     try {
@@ -3289,13 +3291,15 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         body: JSON.stringify({ walletAddress: address, points: n }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (data?.cooldownRemaining) setCooldown(Math.floor(data.cooldownRemaining));
-        setMsg({ type: 'err', text: data?.error || data?.message || `Error ${res.status}` });
+      if (!res.ok || data?.cooldown) {
+        const cd = Number(data?.nextConvertIn ?? data?.cooldownRemaining ?? 0);
+        if (cd > 0) setCooldown(Math.floor(cd));
+        setMsg({ type: 'err', text: data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`) });
       } else {
-        setMsg({ type: 'ok', text: `✅ ${n} pts → ${preview} zkLTC sent!` });
+        setMsg({ type: 'ok', text: `✅ Converted ${n} pts → ${preview} zkLTC` });
         setCooldown(24 * 3600);
         onConverted?.();
+        setTimeout(() => { onClose?.(); }, 3000);
       }
     } catch (e: any) {
       setMsg({ type: 'err', text: e?.message || 'Network error' });
@@ -3310,16 +3314,16 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
       <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
-        <p className="font-mono text-[11px] text-[#555] mb-4 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
-        <p className="font-mono text-[11px] text-[#555] mb-4">Your points: {points ?? 0}</p>
+        <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
+        <p className="font-mono text-[11px] text-[#555] mb-4">Your game points: {available}</p>
         <input
           type="number"
           min={1}
-          max={130}
+          max={MAX_POINTS}
           step={1}
           value={val}
           onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))}
-          placeholder="Enter points (1-130)"
+          placeholder="Enter points (1-10000)"
           className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2"
         />
         <div className="font-mono text-xs text-[#555] mb-4">{n} pts → {preview} zkLTC</div>
@@ -3328,13 +3332,13 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         )}
         <button
           onClick={handleConvert}
-          disabled={submitting || n < 1 || n > 130 || cooldown > 0}
+          disabled={submitting || n < 1 || n > MAX_POINTS || cooldown > 0}
           className="w-full py-3 rounded-lg font-mono font-bold text-sm bg-white text-black disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? 'CONVERTING…' : 'CONVERT'}
         </button>
         {msg && (
-          <div className={`mt-3 font-mono text-xs ${msg.type === 'ok' ? 'text-white' : 'text-red-400'}`}>{msg.text}</div>
+          <div className={`mt-3 font-mono text-xs ${msg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>{msg.text}</div>
         )}
       </div>
     </div>
