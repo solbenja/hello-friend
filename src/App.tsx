@@ -3586,6 +3586,8 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="pt-2 opacity-70">Top 20 rewarded every Sunday midnight IST</div>
             </div>
           </div>
+
+          <GlobalConvertStats />
         </div>
       )}
       <ConvertPopup
@@ -3598,6 +3600,55 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         onConverted={fetchStats}
       />
     </motion.div>
+  );
+};
+
+const GlobalConvertStats = () => {
+  const [stats, setStats] = useState<{ totalTxns: number; totalPoints: number; totalZkltc: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch('https://game.test-hub.xyz/convert/stats/global');
+        const d = await r.json();
+        if (!alive) return;
+        const u = d?.global ?? d?.stats ?? d ?? {};
+        setStats({
+          totalTxns: Number(u.totalTxns ?? 0),
+          totalPoints: Number(u.totalPoints ?? u.totalPointsConverted ?? 0),
+          totalZkltc: Number(u.totalZkltc ?? u.totalZkltcDistributed ?? u.totalZkltcReceived ?? 0),
+        });
+      } catch {}
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  const Row = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-center justify-between py-2">
+      <div style={{ color: '#555555', fontSize: 10, letterSpacing: '0.1em' }} className="uppercase font-mono">{label}</div>
+      <div className="text-white font-bold font-mono" style={{ fontSize: 16 }}>{value}</div>
+    </div>
+  );
+
+  const fmt = (n: number, d = 0) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d }) : '0';
+
+  return (
+    <div className="font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 16 }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[11px] uppercase text-white" style={{ letterSpacing: '0.1em' }}>Global Convert Stats</div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span style={{ color: '#555555', fontSize: 10, letterSpacing: '0.1em' }} className="uppercase">Live</span>
+        </div>
+      </div>
+      <div className="divide-y" style={{ borderColor: '#1f1f1f' }}>
+        <Row label="Total Points Converted" value={`${fmt(stats?.totalPoints ?? 0)} PTS`} />
+        <Row label="Total zkLTC Distributed" value={`${fmt(stats?.totalZkltc ?? 0, 6)} zkLTC`} />
+        <Row label="Total Conversions" value={`${fmt(stats?.totalTxns ?? 0)} txns`} />
+      </div>
+    </div>
   );
 };
 
