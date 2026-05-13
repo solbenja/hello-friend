@@ -3336,13 +3336,14 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
         const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
+        const explorerUrl = data?.explorerUrl || (txHash ? `https://liteforge.explorer.caldera.xyz/tx/${txHash}` : undefined);
         const zkltc = data?.zkltcSent ?? data?.zkltcReceived ?? data?.zkltc ?? preview;
+        const pts = Number(data?.pointsUsed ?? n);
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
-        onConverted?.({ pts: Number(data?.pointsUsed ?? n), zkltc: String(zkltc), txHash });
-        // Close immediately on success — no stale popup state lingers.
-        onClose?.();
+        onConverted?.({ pts, zkltc: String(zkltc), txHash });
+        setSuccess({ pts, zkltc: String(zkltc), txHash, explorerUrl });
       }
     } catch (e: any) {
       setErrMsg(e?.message || 'Network error');
