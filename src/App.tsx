@@ -3640,6 +3640,9 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
                 <div className="text-brand-text-primary text-sm">{gamesToday} / {MS_DAILY_LIMIT}</div>
+                {freeGamesLeft > 0 && (
+                  <div className="font-mono text-[10px] mt-0.5" style={{ color: '#1D9E75' }}>🎮 {freeGamesLeft} free games left</div>
+                )}
               </div>
               {gamesLeft <= 0 ? (
                 <div className="daily-limit-card mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
