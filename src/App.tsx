@@ -3735,7 +3735,20 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         apiRate={Number(convertStats?.rate ?? convertStats?.user?.rate)}
         points={totalPoints}
         initialCooldown={cooldownRemaining}
-        onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
+        onConverted={(info: any) => {
+          fetchStats();
+          setConvertStatsBump((k) => k + 1);
+          try {
+            if (lowerAddr && info) {
+              addNotif(lowerAddr, {
+                type: 'convert',
+                title: 'zkLTC Received',
+                message: `Converted ${info.pts} pts → ${info.zkltc} zkLTC`,
+                link: info.explorerUrl,
+              });
+            }
+          } catch {}
+        }}
       />
     </motion.div>
   );
