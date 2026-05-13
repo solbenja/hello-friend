@@ -3505,7 +3505,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                   src={`/games/math-slash.html?wallet=${lowerAddr}`}
                   title="Math Slash"
                   className="block w-full h-[100vh] lg:h-[600px]"
-                  style={{ border: 'none', touchAction: 'none' }}
+                  style={{ border: 'none' }}
                   allow="autoplay; fullscreen"
                 />
               </div>
