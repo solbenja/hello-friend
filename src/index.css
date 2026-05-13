@@ -303,7 +303,28 @@ body.hide-nav .litdex-mobile-hamburger { display: none !important; }
   color: #000 !important;
 }
 
-/* Games page MATH SLASH dark card — add subtle shadow in light mode */
+/* Games page MATH SLASH dark card — keep dark in both themes; preserve white text in light */
 .light .games-card-dark {
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
+.light .games-card-dark .text-white,
+.light .games-card-dark h3,
+.light .games-card-dark p {
+  color: #fff !important;
+}
+.light .games-card-dark .bg-white {
+  background-color: #fff !important;
+}
+.light .games-card-dark .text-black {
+  color: #000 !important;
+}
+
+/* Global Convert Stats panel — keep dark in both themes, preserve readable text in light */
+.light .math-slash-page .global-convert-stats {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.light .math-slash-page .global-convert-stats .text-white,
+.light .math-slash-page .global-convert-stats .uppercase {
+  color: #fff !important;
+}
+
