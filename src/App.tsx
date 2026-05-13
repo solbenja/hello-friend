@@ -3547,11 +3547,12 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       return Number(zkltc) || 0;
     } catch { return 0; }
   })();
-  const MS_DAILY_LIMIT = 10;
+  const MS_DAILY_LIMIT = 15;
   const gamesPlayed = Number(stats?.gamesPlayed ?? stats?.gamesPlayedToday ?? stats?.gamesToday ?? 0);
   const gamesLeft = Number(stats?.gamesLeft ?? Math.max(0, MS_DAILY_LIMIT - gamesPlayed));
   const gamesToday = Math.min(gamesPlayed, MS_DAILY_LIMIT);
-  const isFree = stats?.isFree ?? (tierNum >= 3);
+  const freeGamesLeft = Number(stats?.freeGamesLeft ?? 0);
+  const isFree = freeGamesLeft > 0 || (stats?.isFree ?? (tierNum >= 3));
   const gameCost = stats?.gameCost ?? 0;
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
@@ -3639,6 +3640,9 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
                 <div className="text-brand-text-primary text-sm">{gamesToday} / {MS_DAILY_LIMIT}</div>
+                {freeGamesLeft > 0 && (
+                  <div className="font-mono text-[10px] mt-0.5" style={{ color: '#1D9E75' }}>🎮 {freeGamesLeft} free games left</div>
+                )}
               </div>
               {gamesLeft <= 0 ? (
                 <div className="daily-limit-card mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
