@@ -616,7 +616,7 @@
     <div id="wallet-screen" class="screen">
       <div class="game-title">MATH SLASH</div>
       <div class="game-subtitle">LITDEX EDITION</div>
-      <div class="game-desc">Connect your wallet to play. Requires a LitDeXNFTv2 NFT.</div>
+      <div class="game-desc">Connect your wallet to play.</div>
       <button class="start-btn" id="connect-btn">CONNECT WALLET</button>
       <div id="wallet-error" style="font-family:'Fredoka One',cursive;color:#ffffff;margin-top:16px;font-size:15px;text-align:center;max-width:340px;display:none;"></div>
     </div>
@@ -660,6 +660,7 @@
       </div>
 
       <button class="start-btn" id="start-btn" style="opacity:0.5;pointer-events:none;">LOADING…</button>
+      <div id="nft-hint" style="display:none;font-family:'Fredoka One',cursive;color:rgba(255,255,255,0.55);margin-top:12px;font-size:13px;text-align:center;max-width:340px;">Hold an NFT for free games & bonuses</div>
       <div id="start-error" style="font-family:'Fredoka One',cursive;color:#ffffff;margin-top:14px;font-size:14px;text-align:center;max-width:340px;display:none;"></div>
     </div>
 
@@ -1845,9 +1846,6 @@ const LitDeX = (() => {
       const data = await r.json();
 
       if (!r.ok) {
-        if (data.error && data.error.includes('NFT')) {
-          showErr('start-error', '⚠ No LitDeXNFTv2 NFT found. You need one to play.');
-        }
         return;
       }
 
@@ -1888,20 +1886,21 @@ const LitDeX = (() => {
       if (hudLeft) hudLeft.textContent = data.gamesLeft ?? '—';
       if (hudZk)   hudZk.textContent   = pointsToday;
 
-      // Enable start button if NFT found
+      // Show NFT hint for non-holders (do not block)
+      const nftHint = el('nft-hint');
+      if (nftHint) nftHint.style.display = tier === 0 ? 'block' : 'none';
+
+      // Enable start button — all wallets allowed; only block when daily limit reached
       const startBtn = el('start-btn');
-      if (startBtn && tier > 0 && (data.gamesLeft > 0)) {
+      if (startBtn && (data.gamesLeft > 0)) {
         startBtn.textContent = 'PLAY';
         startBtn.style.opacity = '1';
         startBtn.style.pointerEvents = 'auto';
       } else if (startBtn) {
-        if (tier === 0) {
-          startBtn.textContent = 'NO NFT';
-          showErr('start-error', '⚠ You need a LitDeXNFTv2 NFT to play.');
-        } else {
-          startBtn.textContent = 'LIMIT REACHED';
-          showErr('start-error', '⚠ Daily limit (100 games) reached. Resets at 00:00 IST.');
-        }
+        startBtn.textContent = 'LIMIT REACHED';
+        startBtn.style.opacity = '0.5';
+        startBtn.style.pointerEvents = 'none';
+        showErr('start-error', '⚠ Daily limit (10 games) reached. Resets at 00:00 IST.');
       }
 
     } catch (err) {
