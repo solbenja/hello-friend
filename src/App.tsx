@@ -3490,64 +3490,66 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-5">
-          {/* Stats */}
-          <div className="p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
-            <div className="text-[11px] uppercase text-brand-text-muted mb-4">Your Stats</div>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted mb-1">NFT Tier</div>
-              <span className="inline-block px-2.5 py-1 rounded-full text-[11px] uppercase text-brand-text-primary bg-brand-surface-2 border border-brand-border">{tierLabel}</span>
-            </div>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
-              <div className="text-brand-text-primary text-sm">{gamesToday} / 100</div>
-            </div>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
-              <div className="text-brand-text-primary text-sm">{gamesLeft}</div>
-            </div>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
-              <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
-            </div>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
-              <div className="text-brand-text-primary text-sm">{pointsToday}</div>
-            </div>
-            <button onClick={() => setConvertOpen(true)} className="w-full text-left mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
-              <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
-              <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>
-            </button>
-            <div className="mb-3">
-              <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted Today</div>
-              <div className="text-brand-text-primary text-sm">{zkConvertedToday.toFixed(7)}</div>
-            </div>
-            <div className="mb-1">
-              <div className="text-[10px] uppercase text-brand-text-muted">Total zkLTC Converted</div>
-              <div className="text-brand-text-primary text-sm">{zkConvertedTotal.toFixed(7)}</div>
-            </div>
-          </div>
-
           {/* Game */}
-          <div className="rounded-2xl overflow-hidden bg-brand-surface border border-brand-border">
+          <div className={`order-1 lg:order-2 rounded-2xl overflow-hidden bg-brand-surface border border-brand-border ${playing ? 'fixed inset-0 z-[10000] rounded-none border-0 lg:static lg:rounded-2xl lg:border' : ''}`}>
             {!playing ? (
-              <div className="p-8 text-center">
-                <div className="font-mono text-brand-text-primary text-lg mb-2">MATH SLASH</div>
+              <div className="p-6 sm:p-8 text-center">
+                <div className="font-mono text-brand-text-primary text-base sm:text-lg mb-2">MATH SLASH</div>
                 <div className="font-mono text-brand-text-muted text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
-                <button onClick={() => setPlaying(true)} className="px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm">START GAME</button>
+                <button onClick={() => setPlaying(true)} className="w-full sm:w-auto min-h-12 px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm">START GAME</button>
               </div>
             ) : (
-              <div className="relative">
+              <div className="relative w-full h-full">
                 <button onClick={() => { setPlaying(false); fetchStats(); }} className="absolute top-2 right-2 z-10 px-3 py-1.5 rounded font-mono text-[11px] uppercase bg-brand-surface-2 text-brand-text-primary border border-brand-border">Exit</button>
                 <iframe
                   src={`/games/math-slash.html?wallet=${lowerAddr}`}
                   title="Math Slash"
-                  className="w-full"
-                  style={{ height: 600, border: 'none' }}
+                  className="block w-full h-[100vh] lg:h-[600px]"
+                  style={{ border: 'none', touchAction: 'none' }}
                   allow="autoplay; fullscreen"
                 />
               </div>
             )}
+          </div>
+
+          {/* Stats */}
+          <div className="order-2 lg:order-1 p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+            <div className="text-[11px] uppercase text-brand-text-muted mb-4">Your Stats</div>
+            <div className="flex lg:block gap-3 overflow-x-auto lg:overflow-visible -mx-1 px-1 pb-2 lg:pb-0 snap-x">
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted mb-1">NFT Tier</div>
+                <span className="inline-block px-2.5 py-1 rounded-full text-[11px] uppercase text-brand-text-primary bg-brand-surface-2 border border-brand-border">{tierLabel}</span>
+              </div>
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
+                <div className="text-brand-text-primary text-sm">{gamesToday} / 100</div>
+              </div>
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
+                <div className="text-brand-text-primary text-sm">{gamesLeft}</div>
+              </div>
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
+                <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
+              </div>
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
+                <div className="text-brand-text-primary text-sm">{pointsToday}</div>
+              </div>
+              <button onClick={() => setConvertOpen(true)} className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
+                <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
+                <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>
+              </button>
+              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted Today</div>
+                <div className="text-brand-text-primary text-sm">{zkConvertedToday.toFixed(7)}</div>
+              </div>
+              <div className="mb-0 lg:mb-1 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0">
+                <div className="text-[10px] uppercase text-brand-text-muted">Total zkLTC Converted</div>
+                <div className="text-brand-text-primary text-sm">{zkConvertedTotal.toFixed(7)}</div>
+              </div>
+            </div>
           </div>
 
           {/* Leaderboard */}
