@@ -3615,11 +3615,30 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
                 <div className="text-brand-text-primary text-sm">{pointsToday}</div>
               </div>
-              <button onClick={() => { if (totalPoints > 0) setConvertOpen(true); }} disabled={totalPoints <= 0} className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0 disabled:cursor-default">
-                <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
-                <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
-                {totalPoints > 0 && <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>}
-              </button>
+              {(() => {
+                const cdActive = cooldownRemaining > 0;
+                const fmtCd = (s: number) => {
+                  const h = String(Math.floor(s / 3600)).padStart(2, '0');
+                  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+                  const sec = String(s % 60).padStart(2, '0');
+                  return `${h}:${m}:${sec}`;
+                };
+                return (
+                  <button
+                    onClick={() => { if (!cdActive && totalPoints > 0) setConvertOpen(true); }}
+                    disabled={totalPoints <= 0 || cdActive}
+                    className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0 disabled:cursor-default"
+                  >
+                    <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
+                    <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
+                    {cdActive ? (
+                      <div className="text-[10px] mt-1 font-mono" style={{ color: '#555' }}>Next convert in {fmtCd(cooldownRemaining)}</div>
+                    ) : (totalPoints > 0 && (
+                      <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>
+                    ))}
+                  </button>
+                );
+              })()}
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted Today</div>
                 <div className="text-brand-text-primary text-sm">{zkConvertedToday.toFixed(7)}</div>
