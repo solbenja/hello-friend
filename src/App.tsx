@@ -3786,7 +3786,7 @@ const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const fmt = (n: number, d = 0) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d }) : '0';
 
   return (
-    <div className="font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 16 }}>
+    <div className="font-mono global-convert-stats" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 16 }}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-[11px] uppercase text-white" style={{ letterSpacing: '0.1em' }}>Global Convert Stats</div>
         <div className="flex items-center gap-1.5">
