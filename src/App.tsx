@@ -3601,7 +3601,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
             </div>
           </div>
 
-          <GlobalConvertStats />
+          <GlobalConvertStats reloadKey={convertStatsBump} />
         </div>
       )}
       <ConvertPopup
@@ -3609,9 +3609,9 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         onClose={() => setConvertOpen(false)}
         address={lowerAddr}
         tier={tier}
-        points={pointsToday}
+        points={totalPoints}
         initialCooldown={cooldownRemaining}
-        onConverted={fetchStats}
+        onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
       />
     </motion.div>
   );
