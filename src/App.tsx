@@ -3462,12 +3462,28 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       return Number(zkltc) || 0;
     } catch { return 0; }
   })();
-  const gamesLeft = (stats?.gamesLeft ?? Math.max(0, 100 - (stats?.gamesPlayedToday ?? 0))) as number;
-  const gamesToday = stats?.gamesPlayedToday ?? stats?.gamesToday ?? Math.max(0, 100 - gamesLeft);
+  const MS_DAILY_LIMIT = 10;
+  const gamesPlayed = Number(stats?.gamesPlayed ?? stats?.gamesPlayedToday ?? stats?.gamesToday ?? 0);
+  const gamesLeft = Number(stats?.gamesLeft ?? Math.max(0, MS_DAILY_LIMIT - gamesPlayed));
+  const gamesToday = Math.min(gamesPlayed, MS_DAILY_LIMIT);
   const isFree = stats?.isFree ?? (tierNum >= 3);
   const gameCost = stats?.gameCost ?? 0;
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
+
+  // Time until next 00:00 IST (UTC+5:30)
+  const midnightIST = (() => {
+    void nowTick;
+    const now = new Date();
+    const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const midnight = new Date(istNow);
+    midnight.setUTCHours(24, 0, 0, 0);
+    const diff = Math.max(0, midnight.getTime() - istNow.getTime());
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  })();
 
   // 24h cooldown derived from convert stats
   const lastConvertTs = (() => {
