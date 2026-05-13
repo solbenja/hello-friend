@@ -3298,14 +3298,16 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
         const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
-        const zkltc = data?.zkltcReceived ?? data?.zkltc ?? preview;
-        setSuccess({ pts: n, zkltc: String(zkltc), txHash });
+        const explorerUrl = data?.explorerUrl || (txHash ? `https://liteforge.explorer.caldera.xyz/tx/${txHash}` : undefined);
+        const zkltc = data?.zkltcSent ?? data?.zkltcReceived ?? data?.zkltc ?? preview;
+        const ptsUsed = Number(data?.pointsUsed ?? n);
+        setSuccess({ pts: ptsUsed, zkltc: String(zkltc), txHash, explorerUrl });
         setCooldown(24 * 3600);
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
         onConverted?.();
-        setTimeout(() => { onClose?.(); }, 3000);
+        setTimeout(() => { onClose?.(); }, 4000);
       }
     } catch (e: any) {
       setErrMsg(e?.message || 'Network error');
