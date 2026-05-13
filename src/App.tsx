@@ -3252,7 +3252,7 @@ const tierKeyFromAny = (t: any): string => {
 const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initialCooldown = 0 }: any) => {
   const [val, setVal] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string } | null>(null);
+  const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string; explorerUrl?: string } | null>(null);
   const [errMsg, setErrMsg] = useState<string>("");
   const [cooldown, setCooldown] = useState<number>(0);
 
@@ -3269,10 +3269,10 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 
   const tierKey = tierKeyFromAny(tier);
   const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
-  const available = Number(points ?? 0);
+  const available = Math.max(0, Math.floor(Number(points ?? 0)));
   const n = parseInt(val) || 0;
+  const MAX_POINTS = Math.max(1, Math.min(10000, available || 10000));
   const preview = (n * rate).toFixed(7);
-  const MAX_POINTS = 10000;
 
   const fmtCooldown = (s: number) => {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
@@ -3298,14 +3298,16 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
         const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
-        const zkltc = data?.zkltcReceived ?? data?.zkltc ?? preview;
-        setSuccess({ pts: n, zkltc: String(zkltc), txHash });
+        const explorerUrl = data?.explorerUrl || (txHash ? `https://liteforge.explorer.caldera.xyz/tx/${txHash}` : undefined);
+        const zkltc = data?.zkltcSent ?? data?.zkltcReceived ?? data?.zkltc ?? preview;
+        const ptsUsed = Number(data?.pointsUsed ?? n);
+        setSuccess({ pts: ptsUsed, zkltc: String(zkltc), txHash, explorerUrl });
         setCooldown(24 * 3600);
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
         onConverted?.();
-        setTimeout(() => { onClose?.(); }, 3000);
+        setTimeout(() => { onClose?.(); }, 4000);
       }
     } catch (e: any) {
       setErrMsg(e?.message || 'Network error');
@@ -3324,7 +3326,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
         <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
-        <p className="font-mono text-[11px] text-[#555] mb-4">Your game points: {available}</p>
+        <p className="font-mono text-[11px] text-white mb-4">Available: {available} pts</p>
         <input
           type="number"
           min={1}
@@ -3332,50 +3334,48 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
           step={1}
           value={val}
           onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))}
-          placeholder="Enter points (1-10000)"
-          className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2"
+          placeholder={`Enter points (1-${MAX_POINTS})`}
+          disabled={onCooldown || !!success}
+          className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2 disabled:opacity-50"
         />
         <div className="font-mono text-xs text-[#555] mb-4">{n} pts → {preview} zkLTC</div>
-        {onCooldown && (
+        {onCooldown && !success && (
           <div
             className="font-mono text-[11px] mb-3"
-            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 8, color: '#555555' }}
+            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 10, color: '#fff' }}
           >
-            Cooldown active — next convert in {fmtCooldown(cooldown)}
+            <div style={{ color: '#fff' }}>Cooldown active</div>
+            <div style={{ color: '#555' }}>Next convert in {fmtCooldown(cooldown)}</div>
           </div>
         )}
         <button
           onClick={handleConvert}
-          disabled={btnDisabled}
+          disabled={btnDisabled || !!success}
           className="w-full py-3 rounded-lg font-mono font-bold text-sm"
           style={
             onCooldown
               ? { background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#333333', cursor: 'not-allowed' }
-              : btnDisabled
+              : (btnDisabled || !!success)
               ? { background: '#ffffff', color: '#000000', opacity: 0.4, cursor: 'not-allowed' }
               : { background: '#ffffff', color: '#000000' }
           }
         >
-          {submitting ? 'CONVERTING…' : 'CONVERT'}
+          {submitting ? 'CONVERTING…' : onCooldown ? 'COOLDOWN' : 'CONVERT'}
         </button>
         {success && (
           <div
             className="mt-3 font-mono text-xs"
             style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 12, color: '#fff' }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Converted {success.pts} pts → {success.zkltc} zkLTC</span>
-            </div>
-            {success.txHash && (
+            <div className="mb-2">✅ {success.pts} pts → {success.zkltc} zkLTC sent!</div>
+            {success.explorerUrl && (
               <a
-                href={`https://liteforge.explorer.caldera.xyz/tx/${success.txHash}`}
+                href={success.explorerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="block text-white underline font-mono text-[11px] truncate"
-                title={success.txHash}
+                className="text-white underline font-mono text-[11px]"
               >
-                {success.txHash}
+                View on Explorer →
               </a>
             )}
           </div>
@@ -3399,8 +3399,11 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const [user, setUser] = useState<any>(null);
   const [board, setBoard] = useState<any>(null);
   const [convertStats, setConvertStats] = useState<any>(null);
+  const [convertStatsBump, setConvertStatsBump] = useState(0);
   const [convertOpen, setConvertOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setNowTick((x) => x + 1), 1000); return () => clearInterval(t); }, []);
 
   const lowerAddr = address ? address.toLowerCase() : '';
 
@@ -3459,12 +3462,28 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       return Number(zkltc) || 0;
     } catch { return 0; }
   })();
-  const gamesLeft = (stats?.gamesLeft ?? Math.max(0, 100 - (stats?.gamesPlayedToday ?? 0))) as number;
-  const gamesToday = stats?.gamesPlayedToday ?? stats?.gamesToday ?? Math.max(0, 100 - gamesLeft);
+  const MS_DAILY_LIMIT = 10;
+  const gamesPlayed = Number(stats?.gamesPlayed ?? stats?.gamesPlayedToday ?? stats?.gamesToday ?? 0);
+  const gamesLeft = Number(stats?.gamesLeft ?? Math.max(0, MS_DAILY_LIMIT - gamesPlayed));
+  const gamesToday = Math.min(gamesPlayed, MS_DAILY_LIMIT);
   const isFree = stats?.isFree ?? (tierNum >= 3);
   const gameCost = stats?.gameCost ?? 0;
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
+
+  // Time until next 00:00 IST (UTC+5:30)
+  const midnightIST = (() => {
+    void nowTick;
+    const now = new Date();
+    const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const midnight = new Date(istNow);
+    midnight.setUTCHours(24, 0, 0, 0);
+    const diff = Math.max(0, midnight.getTime() - istNow.getTime());
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  })();
 
   // 24h cooldown derived from convert stats
   const lastConvertTs = (() => {
@@ -3534,12 +3553,20 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               </div>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
-                <div className="text-brand-text-primary text-sm">{Math.min(gamesToday, 10)} / 10</div>
+                <div className="text-brand-text-primary text-sm">{gamesToday} / {MS_DAILY_LIMIT}</div>
               </div>
-              <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
-                <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
-                <div className="text-brand-text-primary text-sm">{gamesLeft}</div>
-              </div>
+              {gamesLeft <= 0 ? (
+                <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                  <div className="text-[10px] uppercase font-mono" style={{ color: '#555' }}>Daily Limit Reached</div>
+                  <div className="text-white font-mono text-sm mt-0.5">Resets in {midnightIST}</div>
+                  <div className="font-mono mt-0.5" style={{ color: '#333', fontSize: 9 }}>Resets at 00:00 IST</div>
+                </div>
+              ) : (
+                <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
+                  <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
+                  <div className="text-brand-text-primary text-sm">{gamesLeft}</div>
+                </div>
+              )}
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
                 <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
@@ -3601,7 +3628,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
             </div>
           </div>
 
-          <GlobalConvertStats />
+          <GlobalConvertStats reloadKey={convertStatsBump} />
         </div>
       )}
       <ConvertPopup
@@ -3609,15 +3636,15 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         onClose={() => setConvertOpen(false)}
         address={lowerAddr}
         tier={tier}
-        points={pointsToday}
+        points={totalPoints}
         initialCooldown={cooldownRemaining}
-        onConverted={fetchStats}
+        onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
       />
     </motion.div>
   );
 };
 
-const GlobalConvertStats = () => {
+const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const [stats, setStats] = useState<{ totalTxns: number; totalPoints: number; totalZkltc: number } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -3629,15 +3656,15 @@ const GlobalConvertStats = () => {
         const u = d?.global ?? d?.stats ?? d ?? {};
         setStats({
           totalTxns: Number(u.totalTxns ?? 0),
-          totalPoints: Number(u.totalPoints ?? u.totalPointsConverted ?? 0),
-          totalZkltc: Number(u.totalZkltc ?? u.totalZkltcDistributed ?? u.totalZkltcReceived ?? 0),
+          totalPoints: Number(u.totalPointsConverted ?? u.totalPoints ?? 0),
+          totalZkltc: Number(u.totalZkltcSent ?? u.totalZkltcDistributed ?? u.totalZkltc ?? u.totalZkltcReceived ?? 0),
         });
       } catch {}
     };
     load();
     const id = setInterval(load, 30000);
     return () => { alive = false; clearInterval(id); };
-  }, []);
+  }, [reloadKey]);
 
   const Row = ({ label, value }: { label: string; value: string }) => (
     <div className="flex items-center justify-between py-2">
