@@ -3587,7 +3587,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       ) : (
          <div className={`grid gap-5 ${playing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_1fr_280px]'}`}>
           {/* Game */}
-          <div className={`order-1 lg:order-2 overflow-hidden ${playing ? 'fixed inset-0 z-[100000] bg-black rounded-none border-0' : 'rounded-2xl bg-brand-surface border border-brand-border'}`}>
+          <div className={`order-1 lg:order-2 overflow-hidden ${playing ? 'fixed inset-0 z-[100000] bg-black rounded-none border-0' : 'game-canvas-wrap rounded-2xl'}`}>
             {!playing ? (
               <div className="p-6 sm:p-8 text-center">
                 <div className="font-mono text-brand-text-primary text-base sm:text-lg mb-2">MATH SLASH</div>
