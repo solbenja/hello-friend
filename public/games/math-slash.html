@@ -1656,6 +1656,20 @@
     lastTime = now;
 
     if (gameState === 'playing') {
+      // Guard: session must always exist during play (created by /start API).
+      // If it's gone, stop immediately, surface an error and bail to lobby —
+      // do NOT auto-start a new game.
+      const _sess = (window.LitDeX && window.LitDeX.getSession) ? window.LitDeX.getSession() : null;
+      if (!_sess) {
+        console.error('[MathSlash] session missing during play — aborting to lobby');
+        setGameState('menu');
+        try {
+          const goErr = document.getElementById('go-error');
+          if (goErr) { goErr.textContent = '⚠ Session lost. Please start a new game.'; goErr.style.display = 'block'; }
+          goScreen.classList.remove('hidden');
+        } catch(e) {}
+        return;
+      }
       // Spawn
       spawnTimer += dt;
       if (spawnTimer >= spawnInterval) {
