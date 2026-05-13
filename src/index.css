@@ -340,10 +340,8 @@ body.hide-nav .litdex-mobile-hamburger { display: none !important; }
   color: #fff !important;
   border-color: #1f1f1f !important;
 }
-.light .convert-popup-card button[disabled],
-.light .convert-popup-card button {
-  /* preserve inline-style backgrounds; only enforce text contrast handled above */
-}
+/* Convert button keeps its inline white bg + black text */
+.light .convert-popup-card button.font-bold { color: #000 !important; }
 .light .daily-limit-card,
 .light .daily-limit-card * {
   color: #fff !important;
