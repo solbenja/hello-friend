@@ -3525,7 +3525,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           {/* Stats */}
-          <div className="order-2 lg:order-1 p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+          <div className={`order-2 lg:order-1 p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-muted mb-4">Your Stats</div>
             <div className="flex lg:block gap-3 overflow-x-auto lg:overflow-visible -mx-1 px-1 pb-2 lg:pb-0 snap-x">
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
