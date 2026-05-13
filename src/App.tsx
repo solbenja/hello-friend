@@ -3644,7 +3644,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const GlobalConvertStats = () => {
+const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const [stats, setStats] = useState<{ totalTxns: number; totalPoints: number; totalZkltc: number } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -3656,15 +3656,15 @@ const GlobalConvertStats = () => {
         const u = d?.global ?? d?.stats ?? d ?? {};
         setStats({
           totalTxns: Number(u.totalTxns ?? 0),
-          totalPoints: Number(u.totalPoints ?? u.totalPointsConverted ?? 0),
-          totalZkltc: Number(u.totalZkltc ?? u.totalZkltcDistributed ?? u.totalZkltcReceived ?? 0),
+          totalPoints: Number(u.totalPointsConverted ?? u.totalPoints ?? 0),
+          totalZkltc: Number(u.totalZkltcSent ?? u.totalZkltcDistributed ?? u.totalZkltc ?? u.totalZkltcReceived ?? 0),
         });
       } catch {}
     };
     load();
     const id = setInterval(load, 30000);
     return () => { alive = false; clearInterval(id); };
-  }, []);
+  }, [reloadKey]);
 
   const Row = ({ label, value }: { label: string; value: string }) => (
     <div className="flex items-center justify-between py-2">
