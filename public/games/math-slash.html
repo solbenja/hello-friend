@@ -1175,6 +1175,11 @@
   //  GAME STATE
   // ═════════════════════════════════════════════════════
   let gameState = 'menu';
+  function setGameState(next) {
+    if (gameState === next) return;
+    console.log('[MathSlash] state change:', gameState, '->', next, 'score:', score, 'session:', (window.LitDeX && window.LitDeX.getSession) ? window.LitDeX.getSession() : null);
+    gameState = next;
+  }
   let score = 0;
   let lives = MAX_LIVES;
   let bestScore = parseInt(localStorage.getItem('mathslash_best') || '0');
