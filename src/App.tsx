@@ -3408,15 +3408,22 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
             className="mt-3 font-mono text-xs"
             style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 12, color: '#fff' }}
           >
-            <div className="mb-2">✅ {success.pts} pts → {success.zkltc} zkLTC sent!</div>
+            <div className="mb-2">✅ Converted {success.pts} pts → {success.zkltc} zkLTC</div>
             {success.explorerUrl && (
               <a
                 href={success.explorerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-white underline font-mono text-[11px]"
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  color: '#ffffff',
+                  textDecoration: 'underline',
+                  wordBreak: 'break-all',
+                  display: 'inline-block',
+                }}
               >
-                View on Explorer →
+                View Transaction →
               </a>
             )}
           </div>
