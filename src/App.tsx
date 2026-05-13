@@ -3249,17 +3249,35 @@ const tierKeyFromAny = (t: any): string => {
   return String(t ?? 'common').toLowerCase();
 };
 
-const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initialCooldown = 0 }: any) => {
+const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initialCooldown = 0, apiRate }: any) => {
   const [val, setVal] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string; explorerUrl?: string } | null>(null);
   const [errMsg, setErrMsg] = useState<string>("");
   const [cooldown, setCooldown] = useState<number>(0);
+  const [liveRate, setLiveRate] = useState<number | null>(null);
+  const [liveTier, setLiveTier] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) { setVal(""); setSuccess(null); setErrMsg(""); }
-    else { setCooldown(Math.max(0, Math.floor(initialCooldown || 0))); }
-  }, [open, initialCooldown]);
+    if (!open) { setVal(""); setSuccess(null); setErrMsg(""); return; }
+    setCooldown(Math.max(0, Math.floor(initialCooldown || 0)));
+    // Always fetch a fresh rate from the API when opening
+    if (!address) return;
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${MATHSLASH_API}/convert/stats/${address}`);
+        if (!r.ok) return;
+        const d = await r.json();
+        const rt = Number(d?.rate ?? d?.user?.rate);
+        const tr = d?.tier ?? d?.user?.tier;
+        if (!alive) return;
+        if (Number.isFinite(rt)) setLiveRate(rt);
+        if (tr !== undefined && tr !== null) setLiveTier(String(tr));
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, [open, initialCooldown, address]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -3267,8 +3285,11 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
     return () => clearInterval(t);
   }, [cooldown]);
 
-  const tierKey = tierKeyFromAny(tier);
-  const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
+  const tierKey = (liveTier ?? (typeof tier === 'string' ? tier : tierKeyFromAny(tier))).toString().toLowerCase();
+  const propRate = Number(apiRate);
+  const rate = Number.isFinite(liveRate as number) && (liveRate as number) > 0
+    ? (liveRate as number)
+    : (Number.isFinite(propRate) && propRate > 0 ? propRate : 0);
   const available = Math.max(0, Math.floor(Number(points ?? 0)));
   const n = parseInt(val) || 0;
   const MAX_POINTS = Math.max(1, Math.min(10000, available || 10000));
@@ -3325,7 +3346,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
       <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
-        <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
+        <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 PT = {rate > 0 ? rate.toFixed(7) : '—'} ZKLTC</p>
         <p className="font-mono text-[11px] text-white mb-4">Available: {available} pts</p>
         <input
           type="number"
@@ -3635,7 +3656,8 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         open={convertOpen}
         onClose={() => setConvertOpen(false)}
         address={lowerAddr}
-        tier={tier}
+        tier={convertStats?.tier ?? convertStats?.user?.tier ?? tier}
+        apiRate={Number(convertStats?.rate ?? convertStats?.user?.rate)}
         points={totalPoints}
         initialCooldown={cooldownRemaining}
         onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
