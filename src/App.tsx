@@ -3489,23 +3489,35 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           Connect your wallet using the navbar button to play
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-5">
+         <div className={`grid gap-5 ${playing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_1fr_280px]'}`}>
           {/* Game */}
-          <div className={`order-1 lg:order-2 rounded-2xl overflow-hidden bg-brand-surface border border-brand-border ${playing ? 'fixed inset-0 z-[10000] rounded-none border-0 lg:static lg:rounded-2xl lg:border' : ''}`}>
+          <div className={`order-1 lg:order-2 overflow-hidden ${playing ? 'fixed inset-0 z-[100000] bg-black rounded-none border-0' : 'rounded-2xl bg-brand-surface border border-brand-border'}`}>
             {!playing ? (
               <div className="p-6 sm:p-8 text-center">
                 <div className="font-mono text-brand-text-primary text-base sm:text-lg mb-2">MATH SLASH</div>
                 <div className="font-mono text-brand-text-muted text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
-                <button type="button" onClick={() => setPlaying(true)} onTouchEnd={(e) => { e.preventDefault(); setPlaying(true); }} className="w-full sm:w-auto min-h-12 px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm cursor-pointer touch-manipulation select-none active:scale-[0.98]" style={{ WebkitTapHighlightColor: 'transparent' }}>START GAME</button>
+                <button type="button" onClick={() => {
+                  setPlaying(true);
+                  try {
+                    const el: any = document.documentElement;
+                    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+                    if (req) req.call(el).catch(() => {});
+                  } catch {}
+                  try { (screen.orientation as any)?.lock?.('landscape').catch(() => {}); } catch {}
+                }} onTouchEnd={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).click(); }} className="w-full sm:w-auto min-h-12 px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm cursor-pointer touch-manipulation select-none active:scale-[0.98]" style={{ WebkitTapHighlightColor: 'transparent' }}>START GAME</button>
               </div>
             ) : (
-              <div className="relative w-full h-full">
-                <button onClick={() => { setPlaying(false); fetchStats(); }} className="absolute top-2 right-2 z-10 px-3 py-1.5 rounded font-mono text-[11px] uppercase bg-brand-surface-2 text-brand-text-primary border border-brand-border">Exit</button>
+              <div className="relative w-screen h-screen" style={{ width: '100vw', height: '100dvh' }}>
+                <button onClick={() => {
+                  setPlaying(false);
+                  fetchStats();
+                  try { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); } catch {}
+                  try { (screen.orientation as any)?.unlock?.(); } catch {}
+                }} className="font-mono text-[11px] uppercase bg-brand-surface-2 text-brand-text-primary border border-brand-border" style={{ position: 'fixed', top: 16, right: 16, zIndex: 999999, padding: '8px 14px', borderRadius: 8 }}>EXIT</button>
                 <iframe
                   src={`/games/math-slash.html?wallet=${lowerAddr}`}
                   title="Math Slash"
-                  className="block w-full h-[100vh] lg:h-[600px]"
-                  style={{ border: 'none' }}
+                  style={{ border: 'none', position: 'absolute', inset: 0, width: '100%', height: '100%' }}
                   allow="autoplay; fullscreen"
                 />
               </div>
@@ -3513,7 +3525,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           {/* Stats */}
-          <div className="order-2 lg:order-1 p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+          <div className={`order-2 lg:order-1 p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-muted mb-4">Your Stats</div>
             <div className="flex lg:block gap-3 overflow-x-auto lg:overflow-visible -mx-1 px-1 pb-2 lg:pb-0 snap-x">
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
@@ -3553,7 +3565,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           {/* Leaderboard */}
-          <div className="p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+          <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
             {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
             {entries.length === 0 ? (
