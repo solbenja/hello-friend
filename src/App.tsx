@@ -3489,7 +3489,15 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     if (!lowerAddr) return;
     const onMsg = (e: MessageEvent) => {
       const d: any = e?.data;
-      if (!d || d.type !== 'litdex:mathslash:end') return;
+      if (!d) return;
+      if (d.type === 'litdex:mathslash:exit') {
+        setPlaying(false);
+        try { fetchStats(); } catch {}
+        try { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); } catch {}
+        try { (screen.orientation as any)?.unlock?.(); } catch {}
+        return;
+      }
+      if (d.type !== 'litdex:mathslash:end') return;
       const score = Number(d.score) || 0;
       const pts = Number(d.pointsEarned) || 0;
       try {

@@ -1625,7 +1625,7 @@
   bindTap(document.getElementById('exit-btn'), () => {
     setGameState('menu');
     score = 0; currentLevel = 0; streak = 0; totalCorrect = 0; totalWrong = 0;
-    window.location.href = '/games';
+    try { window.parent?.postMessage({ type: 'litdex:mathslash:exit' }, '*'); } catch {}
   });
 
   // ═════════════════════════════════════════════════════
@@ -1934,6 +1934,9 @@ const LitDeX = (() => {
         startBtn.textContent = 'LIMIT REACHED';
         startBtn.style.opacity = '0.5';
         startBtn.style.pointerEvents = 'none';
+        startBtn.style.cursor = 'not-allowed';
+        startBtn.setAttribute('disabled', 'true');
+        startBtn.onclick = null;
         showErr('start-error', '⚠ Daily limit (10 games) reached. Resets at 00:00 IST.');
       }
 
