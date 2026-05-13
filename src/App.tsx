@@ -3342,7 +3342,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
-        onConverted?.({ pts, zkltc: String(zkltc), txHash });
+        onConverted?.({ pts, zkltc: String(zkltc), txHash, explorerUrl });
         setSuccess({ pts, zkltc: String(zkltc), txHash, explorerUrl });
       }
     } catch (e: any) {
@@ -3484,6 +3484,35 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     return () => clearInterval(t);
   }, []);
 
+  // Listen for game-end postMessage from the math-slash iframe and emit notifications
+  useEffect(() => {
+    if (!lowerAddr) return;
+    const onMsg = (e: MessageEvent) => {
+      const d: any = e?.data;
+      if (!d || d.type !== 'litdex:mathslash:end') return;
+      const score = Number(d.score) || 0;
+      const pts = Number(d.pointsEarned) || 0;
+      try {
+        addNotif(lowerAddr, {
+          type: 'game',
+          title: 'Game Played',
+          message: `Scored ${score} pts · Earned ${pts} points`,
+        });
+        if (pts > 0) {
+          addNotif(lowerAddr, {
+            type: 'milestone',
+            title: 'Points Earned',
+            message: `+${pts} points from Math Slash`,
+          });
+        }
+      } catch {}
+      try { fetchStats(); } catch {}
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [lowerAddr]);
+
+
   useEffect(() => {
     if (playing) document.body.classList.add('hide-nav');
     else document.body.classList.remove('hide-nav');
@@ -3549,7 +3578,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   })();
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 max-w-7xl mx-auto px-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="math-slash-page py-8 max-w-7xl mx-auto px-4">
       <button onClick={onBack} className="font-mono text-[11px] uppercase text-brand-text-muted hover:text-brand-text-primary mb-6">← Back to Games</button>
       {!isConnected ? (
         <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted">
@@ -3558,7 +3587,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       ) : (
          <div className={`grid gap-5 ${playing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_1fr_280px]'}`}>
           {/* Game */}
-          <div className={`order-1 lg:order-2 overflow-hidden ${playing ? 'fixed inset-0 z-[100000] bg-black rounded-none border-0' : 'rounded-2xl bg-brand-surface border border-brand-border'}`}>
+          <div className={`order-1 lg:order-2 overflow-hidden ${playing ? 'fixed inset-0 z-[100000] bg-black rounded-none border-0' : 'game-canvas-wrap rounded-2xl'}`}>
             {!playing ? (
               <div className="p-6 sm:p-8 text-center">
                 <div className="font-mono text-brand-text-primary text-base sm:text-lg mb-2">MATH SLASH</div>
@@ -3706,7 +3735,20 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         apiRate={Number(convertStats?.rate ?? convertStats?.user?.rate)}
         points={totalPoints}
         initialCooldown={cooldownRemaining}
-        onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
+        onConverted={(info: any) => {
+          fetchStats();
+          setConvertStatsBump((k) => k + 1);
+          try {
+            if (lowerAddr && info) {
+              addNotif(lowerAddr, {
+                type: 'convert',
+                title: 'zkLTC Received',
+                message: `Converted ${info.pts} pts → ${info.zkltc} zkLTC`,
+                link: info.explorerUrl,
+              });
+            }
+          } catch {}
+        }}
       />
     </motion.div>
   );
@@ -3768,7 +3810,7 @@ const GamesPage = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 max-w-6xl mx-auto px-4">
       <h1 className="text-3xl font-bold tracking-tighter text-white mb-8">Games</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+        <div className="games-card-dark rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
           <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
             <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
               <Gamepad2 size={32} className="text-white" />

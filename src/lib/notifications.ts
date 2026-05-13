@@ -1,6 +1,7 @@
 export type NotifType =
   | "swap" | "lp" | "deploy" | "points" | "checkin"
-  | "nft" | "gf" | "quest" | "faucet";
+  | "nft" | "gf" | "quest" | "faucet"
+  | "game" | "convert" | "milestone";
 
 export type Notification = {
   id: string;
@@ -9,6 +10,7 @@ export type Notification = {
   message: string;
   timestamp: number;
   read: boolean;
+  link?: string;
 };
 
 const key = (w: string) => `litdex_notifications_${w.toLowerCase()}`;

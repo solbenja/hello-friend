@@ -267,3 +267,43 @@ input[type=number] {
 body.hide-nav .litdex-desktop-nav,
 body.hide-nav .litdex-mobile-hamburger { display: none !important; }
 
+
+/* Math Slash light-mode polish */
+.light .math-slash-page .bg-brand-surface {
+  background-color: #f5f5f5 !important;
+  border-color: #e0e0e0 !important;
+}
+.light .math-slash-page .bg-brand-surface-2 {
+  background-color: #ececec !important;
+  border-color: #d0d0d0 !important;
+}
+.light .math-slash-page .text-brand-text-muted,
+.light .math-slash-page .uppercase {
+  color: #111 !important;
+}
+.light .math-slash-page .text-brand-text-primary {
+  color: #000 !important;
+}
+/* Center game panel: keep canvas dark in both themes for an intentional look */
+.math-slash-page .game-canvas-wrap {
+  background: #0a0a0a;
+  border-radius: 12px;
+  border: 1px solid #1f1f1f;
+  overflow: hidden;
+}
+.light .math-slash-page .game-canvas-wrap {
+  border-color: #e5e5e5;
+}
+.light .math-slash-page .game-canvas-wrap .text-brand-text-muted,
+.light .math-slash-page .game-canvas-wrap .text-brand-text-primary {
+  color: #fff !important;
+}
+.light .math-slash-page .game-canvas-wrap .font-mono.font-bold {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+/* Games page MATH SLASH dark card — add subtle shadow in light mode */
+.light .games-card-dark {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
