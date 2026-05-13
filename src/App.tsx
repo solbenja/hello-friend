@@ -3647,9 +3647,10 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
                 <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
+                <div className="text-[9px] mt-0.5 text-brand-text-muted" style={{ fontStyle: 'italic' }}>(pts from points section)</div>
               </div>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
-                <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
+                <div className="text-[10px] uppercase text-brand-text-muted">In-Game Points Today</div>
                 <div className="text-brand-text-primary text-sm">{pointsToday}</div>
               </div>
               {(() => {
