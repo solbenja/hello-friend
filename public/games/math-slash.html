@@ -2018,6 +2018,14 @@ const LitDeX = (() => {
         const zkTodayCard = el('zk-earned-label');
         if (zkTodayCard) zkTodayCard.textContent = ptsEarned + ' PTS';
 
+        try {
+          window.parent && window.parent.postMessage({
+            type: 'litdex:mathslash:end',
+            score: Number(score) || 0,
+            pointsEarned: Number(ptsEarned) || 0,
+          }, '*');
+        } catch (_) {}
+
       } else {
         if (rewardCard) rewardCard.style.display = 'block';
         if (zkEl)    zkEl.textContent = 'Reward pending…';
