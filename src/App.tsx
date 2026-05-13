@@ -3368,7 +3368,12 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
           max={MAX_POINTS}
           step={1}
           value={val}
-          onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/[^0-9]/g, '');
+            if (digits === '') { setVal(''); return; }
+            const num = Math.min(parseInt(digits, 10) || 0, MAX_POINTS);
+            setVal(String(num));
+          }}
           placeholder={`Enter points (1-${MAX_POINTS})`}
           disabled={onCooldown || !!success}
           className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2 disabled:opacity-50"
