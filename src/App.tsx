@@ -3647,9 +3647,10 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Game Cost</div>
                 <div className="text-brand-text-primary text-sm">{isFree ? 'FREE' : `${gameCost} PTS`}</div>
+                <div className="text-[9px] mt-0.5 text-brand-text-muted" style={{ fontStyle: 'italic' }}>(pts from points section)</div>
               </div>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
-                <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
+                <div className="text-[10px] uppercase text-brand-text-muted">In-Game Points Today</div>
                 <div className="text-brand-text-primary text-sm">{pointsToday}</div>
               </div>
               {(() => {
@@ -3666,7 +3667,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                     disabled={totalPoints <= 0 || cdActive}
                     className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0 disabled:cursor-default"
                   >
-                    <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
+                    <div className="text-[10px] uppercase text-brand-text-muted">In-Game Total Points</div>
                     <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
                     {cdActive ? (
                       <div className="text-[10px] mt-1 font-mono" style={{ color: '#555' }}>Next convert in {fmtCd(cooldownRemaining)}</div>
@@ -3786,7 +3787,7 @@ const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const fmt = (n: number, d = 0) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d }) : '0';
 
   return (
-    <div className="font-mono" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 16 }}>
+    <div className="font-mono global-convert-stats" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 16 }}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-[11px] uppercase text-white" style={{ letterSpacing: '0.1em' }}>Global Convert Stats</div>
         <div className="flex items-center gap-1.5">
