@@ -3667,7 +3667,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                     disabled={totalPoints <= 0 || cdActive}
                     className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0 disabled:cursor-default"
                   >
-                    <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
+                    <div className="text-[10px] uppercase text-brand-text-muted">In-Game Total Points</div>
                     <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
                     {cdActive ? (
                       <div className="text-[10px] mt-1 font-mono" style={{ color: '#555' }}>Next convert in {fmtCd(cooldownRemaining)}</div>
