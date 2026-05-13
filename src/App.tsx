@@ -3346,7 +3346,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
       <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
-        <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
+        <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 PT = {rate > 0 ? rate.toFixed(7) : '—'} ZKLTC</p>
         <p className="font-mono text-[11px] text-white mb-4">Available: {available} pts</p>
         <input
           type="number"
