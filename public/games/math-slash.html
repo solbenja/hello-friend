@@ -1449,8 +1449,18 @@
   }
 
   function beginActualGame() {
+    if (gameState === 'playing') {
+      console.warn('[MathSlash] beginActualGame called while playing — ignored');
+      return;
+    }
+    // Session must exist (created by /start API) before gameplay can begin
+    const sess = (window.LitDeX && window.LitDeX.getSession) ? window.LitDeX.getSession() : null;
+    if (!sess) {
+      console.warn('[MathSlash] beginActualGame aborted — no active session');
+      return;
+    }
     tutScreen.classList.add('hidden');
-    gameState = 'playing';
+    setGameState('playing');
     score = 0; lives = MAX_LIVES;
     currentLevel = 0; streak = 0;
     totalCorrect = 0; totalWrong = 0;
@@ -1474,6 +1484,10 @@
   }
 
   function startGame() {
+    if (gameState === 'playing') {
+      console.warn('[MathSlash] startGame called while playing — ignored');
+      return;
+    }
     if (firstPlay) {
       firstPlay = false;
       startScreen.classList.add('hidden');
@@ -1484,7 +1498,7 @@
   }
 
   function endGame() {
-    gameState = 'gameover';
+    setGameState('gameover');
     if (score > bestScore) {
       bestScore = score;
       localStorage.setItem('mathslash_best', bestScore.toString());
