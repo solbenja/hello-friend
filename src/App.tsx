@@ -3565,7 +3565,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           {/* Leaderboard */}
-          <div className="p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border">
+          <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
             {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
             {entries.length === 0 ? (
