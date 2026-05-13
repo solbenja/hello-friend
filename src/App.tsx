@@ -3578,7 +3578,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   })();
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 max-w-7xl mx-auto px-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="math-slash-page py-8 max-w-7xl mx-auto px-4">
       <button onClick={onBack} className="font-mono text-[11px] uppercase text-brand-text-muted hover:text-brand-text-primary mb-6">← Back to Games</button>
       {!isConnected ? (
         <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted">
