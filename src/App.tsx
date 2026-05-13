@@ -3496,7 +3496,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               <div className="p-6 sm:p-8 text-center">
                 <div className="font-mono text-brand-text-primary text-base sm:text-lg mb-2">MATH SLASH</div>
                 <div className="font-mono text-brand-text-muted text-xs mb-6">Slash the equations. Earn points, convert to zkLTC.</div>
-                <button onClick={() => setPlaying(true)} className="w-full sm:w-auto min-h-12 px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm">START GAME</button>
+                <button type="button" onClick={() => setPlaying(true)} onTouchEnd={(e) => { e.preventDefault(); setPlaying(true); }} className="w-full sm:w-auto min-h-12 px-8 py-3 rounded-lg bg-brand-text-primary text-brand-bg font-mono font-bold text-sm cursor-pointer touch-manipulation select-none active:scale-[0.98]" style={{ WebkitTapHighlightColor: 'transparent' }}>START GAME</button>
               </div>
             ) : (
               <div className="relative w-full h-full">
@@ -3505,7 +3505,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                   src={`/games/math-slash.html?wallet=${lowerAddr}`}
                   title="Math Slash"
                   className="block w-full h-[100vh] lg:h-[600px]"
-                  style={{ border: 'none', touchAction: 'none' }}
+                  style={{ border: 'none' }}
                   allow="autoplay; fullscreen"
                 />
               </div>
