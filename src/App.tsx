@@ -3399,8 +3399,11 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const [user, setUser] = useState<any>(null);
   const [board, setBoard] = useState<any>(null);
   const [convertStats, setConvertStats] = useState<any>(null);
+  const [convertStatsBump, setConvertStatsBump] = useState(0);
   const [convertOpen, setConvertOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setNowTick((x) => x + 1), 1000); return () => clearInterval(t); }, []);
 
   const lowerAddr = address ? address.toLowerCase() : '';
 
