@@ -3342,7 +3342,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
-        onConverted?.({ pts, zkltc: String(zkltc), txHash });
+        onConverted?.({ pts, zkltc: String(zkltc), txHash, explorerUrl });
         setSuccess({ pts, zkltc: String(zkltc), txHash, explorerUrl });
       }
     } catch (e: any) {
