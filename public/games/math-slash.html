@@ -370,6 +370,22 @@
     box-shadow: 0 6px 30px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,0.4);
   }
   .start-btn:active { transform: scale(0.97); }
+  .start-btn, .tut-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    z-index: 9999;
+    pointer-events: auto;
+    min-height: 56px;
+  }
+  @media (max-width: 768px) {
+    .start-btn, .tut-btn {
+      width: calc(100% - 40px);
+      max-width: 360px;
+    }
+  }
 
   #gameover-screen {
     background: radial-gradient(ellipse at center, rgba(20,20,20,0.85) 0%, rgba(0,0,0,0.95) 100%);
@@ -1474,9 +1490,21 @@
   }, { passive: false });
   inputLayer.addEventListener('touchend', () => isSlicing = false);
 
-  document.getElementById('start-btn').addEventListener('click', async () => {
+  // Helper: bind both click + touchend so mobile taps work reliably
+  function bindTap(el, handler) {
+    if (!el) return;
+    el.addEventListener('click', handler);
+    el.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handler(e);
+    }, { passive: false });
+  }
+
+  bindTap(document.getElementById('start-btn'), async () => {
     const btn = document.getElementById('start-btn');
     const errEl = document.getElementById('start-error');
+    if (btn.style.pointerEvents === 'none') return;
     errEl.style.display = 'none';
     btn.textContent = 'STARTING…';
     btn.style.opacity = '0.5';
@@ -1492,9 +1520,10 @@
     }
   });
 
-  document.getElementById('restart-btn').addEventListener('click', async () => {
+  bindTap(document.getElementById('restart-btn'), async () => {
     const btn = document.getElementById('restart-btn');
     const errEl = document.getElementById('go-error');
+    if (btn.style.pointerEvents === 'none') return;
     errEl.style.display = 'none';
     btn.textContent = 'STARTING…';
     btn.style.opacity = '0.5';
@@ -1515,7 +1544,7 @@
     }
   });
 
-  document.getElementById('tut-go-btn').addEventListener('click', beginActualGame);
+  bindTap(document.getElementById('tut-go-btn'), beginActualGame);
 
   // ═════════════════════════════════════════════════════
   //  RESIZE
