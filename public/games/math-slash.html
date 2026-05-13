@@ -1965,7 +1965,7 @@ const LitDeX = (() => {
       activeSession = {
         sessionId:   data.sessionId,
         cost:        data.cost,
-        bonusPoints: data.bonusPoints || 0,
+        bonusPoints: (data.bonus_pts !== undefined ? data.bonus_pts : (data.bonusPoints !== undefined ? data.bonusPoints : 0)),
         gamesLeft:   data.gamesLeft,
       };
       sessionZkLtc = 0;
