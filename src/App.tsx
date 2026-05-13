@@ -3656,7 +3656,8 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
         open={convertOpen}
         onClose={() => setConvertOpen(false)}
         address={lowerAddr}
-        tier={tier}
+        tier={convertStats?.tier ?? convertStats?.user?.tier ?? tier}
+        apiRate={Number(convertStats?.rate ?? convertStats?.user?.rate)}
         points={totalPoints}
         initialCooldown={cooldownRemaining}
         onConverted={() => { fetchStats(); setConvertStatsBump((k) => k + 1); }}
