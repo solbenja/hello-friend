@@ -1934,6 +1934,9 @@ const LitDeX = (() => {
         startBtn.textContent = 'LIMIT REACHED';
         startBtn.style.opacity = '0.5';
         startBtn.style.pointerEvents = 'none';
+        startBtn.style.cursor = 'not-allowed';
+        startBtn.setAttribute('disabled', 'true');
+        startBtn.onclick = null;
         showErr('start-error', '⚠ Daily limit (10 games) reached. Resets at 00:00 IST.');
       }
 
