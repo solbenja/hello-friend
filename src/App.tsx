@@ -3326,7 +3326,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
         <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 pt = {rate} zkLTC</p>
-        <p className="font-mono text-[11px] text-[#555] mb-4">Your game points: {available}</p>
+        <p className="font-mono text-[11px] text-white mb-4">Available: {available} pts</p>
         <input
           type="number"
           min={1}
@@ -3334,50 +3334,48 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
           step={1}
           value={val}
           onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))}
-          placeholder="Enter points (1-10000)"
-          className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2"
+          placeholder={`Enter points (1-${MAX_POINTS})`}
+          disabled={onCooldown || !!success}
+          className="w-full px-3 py-3 rounded-lg font-mono text-white bg-black border border-[#1f1f1f] outline-none focus:border-white/40 mb-2 disabled:opacity-50"
         />
         <div className="font-mono text-xs text-[#555] mb-4">{n} pts → {preview} zkLTC</div>
-        {onCooldown && (
+        {onCooldown && !success && (
           <div
             className="font-mono text-[11px] mb-3"
-            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 8, color: '#555555' }}
+            style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, padding: 10, color: '#fff' }}
           >
-            Cooldown active — next convert in {fmtCooldown(cooldown)}
+            <div style={{ color: '#fff' }}>Cooldown active</div>
+            <div style={{ color: '#555' }}>Next convert in {fmtCooldown(cooldown)}</div>
           </div>
         )}
         <button
           onClick={handleConvert}
-          disabled={btnDisabled}
+          disabled={btnDisabled || !!success}
           className="w-full py-3 rounded-lg font-mono font-bold text-sm"
           style={
             onCooldown
               ? { background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#333333', cursor: 'not-allowed' }
-              : btnDisabled
+              : (btnDisabled || !!success)
               ? { background: '#ffffff', color: '#000000', opacity: 0.4, cursor: 'not-allowed' }
               : { background: '#ffffff', color: '#000000' }
           }
         >
-          {submitting ? 'CONVERTING…' : 'CONVERT'}
+          {submitting ? 'CONVERTING…' : onCooldown ? 'COOLDOWN' : 'CONVERT'}
         </button>
         {success && (
           <div
             className="mt-3 font-mono text-xs"
             style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 12, color: '#fff' }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Converted {success.pts} pts → {success.zkltc} zkLTC</span>
-            </div>
-            {success.txHash && (
+            <div className="mb-2">✅ {success.pts} pts → {success.zkltc} zkLTC sent!</div>
+            {success.explorerUrl && (
               <a
-                href={`https://liteforge.explorer.caldera.xyz/tx/${success.txHash}`}
+                href={success.explorerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="block text-white underline font-mono text-[11px] truncate"
-                title={success.txHash}
+                className="text-white underline font-mono text-[11px]"
               >
-                {success.txHash}
+                View on Explorer →
               </a>
             )}
           </div>
