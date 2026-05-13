@@ -3484,6 +3484,35 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     return () => clearInterval(t);
   }, []);
 
+  // Listen for game-end postMessage from the math-slash iframe and emit notifications
+  useEffect(() => {
+    if (!lowerAddr) return;
+    const onMsg = (e: MessageEvent) => {
+      const d: any = e?.data;
+      if (!d || d.type !== 'litdex:mathslash:end') return;
+      const score = Number(d.score) || 0;
+      const pts = Number(d.pointsEarned) || 0;
+      try {
+        addNotif(lowerAddr, {
+          type: 'game',
+          title: 'Game Played',
+          message: `Scored ${score} pts · Earned ${pts} points`,
+        });
+        if (pts > 0) {
+          addNotif(lowerAddr, {
+            type: 'milestone',
+            title: 'Points Earned',
+            message: `+${pts} points from Math Slash`,
+          });
+        }
+      } catch {}
+      try { fetchStats(); } catch {}
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [lowerAddr]);
+
+
   useEffect(() => {
     if (playing) document.body.classList.add('hide-nav');
     else document.body.classList.remove('hide-nav');
