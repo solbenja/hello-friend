@@ -3575,10 +3575,10 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-[10px] uppercase text-brand-text-muted">Points Today</div>
                 <div className="text-brand-text-primary text-sm">{pointsToday}</div>
               </div>
-              <button onClick={() => setConvertOpen(true)} className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0">
+              <button onClick={() => { if (totalPoints > 0) setConvertOpen(true); }} disabled={totalPoints <= 0} className="text-left mb-0 lg:mb-3 shrink-0 lg:shrink lg:w-full snap-start min-w-[160px] lg:min-w-0 disabled:cursor-default">
                 <div className="text-[10px] uppercase text-brand-text-muted">Total Points</div>
                 <div className="text-brand-text-primary text-2xl font-bold">{totalPoints}</div>
-                <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>
+                {totalPoints > 0 && <div className="text-[10px] mt-1" style={{ color: '#333' }}>tap to convert → zkLTC</div>}
               </button>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">zkLTC Converted Today</div>
