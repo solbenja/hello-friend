@@ -3257,23 +3257,40 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   const [cooldown, setCooldown] = useState<number>(0);
   const [liveRate, setLiveRate] = useState<number | null>(null);
   const [liveTier, setLiveTier] = useState<string | null>(null);
+  const [liveMax, setLiveMax] = useState<number | null>(null);
 
+  // Fully reset state on every open and refetch fresh stats + rate.
   useEffect(() => {
-    if (!open) { setVal(""); setSuccess(null); setErrMsg(""); return; }
+    if (!open) return;
+    setVal("");
+    setSuccess(null);
+    setErrMsg("");
+    setLiveRate(null);
+    setLiveTier(null);
+    setLiveMax(null);
     setCooldown(Math.max(0, Math.floor(initialCooldown || 0)));
-    // Always fetch a fresh rate from the API when opening
     if (!address) return;
     let alive = true;
     (async () => {
       try {
         const r = await fetch(`${MATHSLASH_API}/convert/stats/${address}`);
-        if (!r.ok) return;
-        const d = await r.json();
-        const rt = Number(d?.rate ?? d?.user?.rate);
-        const tr = d?.tier ?? d?.user?.tier;
-        if (!alive) return;
-        if (Number.isFinite(rt)) setLiveRate(rt);
-        if (tr !== undefined && tr !== null) setLiveTier(String(tr));
+        if (r.ok) {
+          const d = await r.json();
+          const rt = Number(d?.rate ?? d?.user?.rate);
+          const tr = d?.tier ?? d?.user?.tier;
+          if (alive) {
+            if (Number.isFinite(rt)) setLiveRate(rt);
+            if (tr !== undefined && tr !== null) setLiveTier(String(tr));
+          }
+        }
+      } catch { /* ignore */ }
+      try {
+        const r2 = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${address}`);
+        if (r2.ok) {
+          const s = await r2.json();
+          const mx = Number(s?.totalPointsEarned);
+          if (alive && Number.isFinite(mx)) setLiveMax(Math.max(0, Math.floor(mx)));
+        }
       } catch { /* ignore */ }
     })();
     return () => { alive = false; };
@@ -3290,9 +3307,9 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   const rate = Number.isFinite(liveRate as number) && (liveRate as number) > 0
     ? (liveRate as number)
     : (Number.isFinite(propRate) && propRate > 0 ? propRate : 0);
-  const available = Math.max(0, Math.floor(Number(points ?? 0)));
-  const n = parseInt(val) || 0;
-  const MAX_POINTS = Math.max(1, Math.min(10000, available || 10000));
+  const available = liveMax !== null ? liveMax : Math.max(0, Math.floor(Number(points ?? 0)));
+  const MAX_POINTS = Math.max(0, available);
+  const n = Math.min(parseInt(val) || 0, MAX_POINTS);
   const preview = (n * rate).toFixed(7);
 
   const fmtCooldown = (s: number) => {
@@ -3319,16 +3336,13 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
         const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
-        const explorerUrl = data?.explorerUrl || (txHash ? `https://liteforge.explorer.caldera.xyz/tx/${txHash}` : undefined);
         const zkltc = data?.zkltcSent ?? data?.zkltcReceived ?? data?.zkltc ?? preview;
-        const ptsUsed = Number(data?.pointsUsed ?? n);
-        setSuccess({ pts: ptsUsed, zkltc: String(zkltc), txHash, explorerUrl });
-        setCooldown(24 * 3600);
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
-        onConverted?.();
-        setTimeout(() => { onClose?.(); }, 4000);
+        onConverted?.({ pts: Number(data?.pointsUsed ?? n), zkltc: String(zkltc), txHash });
+        // Close immediately on success — no stale popup state lingers.
+        onClose?.();
       }
     } catch (e: any) {
       setErrMsg(e?.message || 'Network error');
@@ -3339,7 +3353,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 
   if (!open) return null;
   const onCooldown = cooldown > 0;
-  const btnDisabled = submitting || n < 1 || n > MAX_POINTS || onCooldown;
+  const btnDisabled = submitting || n < 1 || n > MAX_POINTS || onCooldown || MAX_POINTS < 1;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
