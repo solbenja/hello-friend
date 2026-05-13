@@ -3641,7 +3641,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-brand-text-primary text-sm">{gamesToday} / {MS_DAILY_LIMIT}</div>
               </div>
               {gamesLeft <= 0 ? (
-                <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <div className="daily-limit-card mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
                   <div className="text-[10px] uppercase font-mono" style={{ color: '#555' }}>Daily Limit Reached</div>
                   <div className="text-white font-mono text-sm mt-0.5">Resets in {midnightIST}</div>
                   <div className="font-mono mt-0.5" style={{ color: '#333', fontSize: 9 }}>Resets at 00:00 IST</div>
