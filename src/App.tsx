@@ -3336,13 +3336,14 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
         setErrMsg(data?.error || data?.message || (data?.cooldown ? 'Cooldown active' : `Error ${res.status}`));
       } else {
         const txHash = data?.txHash || data?.hash || data?.transactionHash || data?.tx;
+        const explorerUrl = data?.explorerUrl || (txHash ? `https://liteforge.explorer.caldera.xyz/tx/${txHash}` : undefined);
         const zkltc = data?.zkltcSent ?? data?.zkltcReceived ?? data?.zkltc ?? preview;
+        const pts = Number(data?.pointsUsed ?? n);
         try {
           if (address) localStorage.setItem(`mathslash_today_${address.toLowerCase()}`, JSON.stringify({ ts: Date.now(), zkltc: String(zkltc) }));
         } catch { /* ignore */ }
-        onConverted?.({ pts: Number(data?.pointsUsed ?? n), zkltc: String(zkltc), txHash });
-        // Close immediately on success — no stale popup state lingers.
-        onClose?.();
+        onConverted?.({ pts, zkltc: String(zkltc), txHash });
+        setSuccess({ pts, zkltc: String(zkltc), txHash, explorerUrl });
       }
     } catch (e: any) {
       setErrMsg(e?.message || 'Network error');
@@ -3407,15 +3408,22 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
             className="mt-3 font-mono text-xs"
             style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 12, padding: 12, color: '#fff' }}
           >
-            <div className="mb-2">✅ {success.pts} pts → {success.zkltc} zkLTC sent!</div>
+            <div className="mb-2">✅ Converted {success.pts} pts → {success.zkltc} zkLTC</div>
             {success.explorerUrl && (
               <a
                 href={success.explorerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-white underline font-mono text-[11px]"
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  color: '#ffffff',
+                  textDecoration: 'underline',
+                  wordBreak: 'break-all',
+                  display: 'inline-block',
+                }}
               >
-                View on Explorer →
+                View Transaction →
               </a>
             )}
           </div>
