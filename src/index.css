@@ -328,3 +328,22 @@ body.hide-nav .litdex-mobile-hamburger { display: none !important; }
   color: #fff !important;
 }
 
+
+/* Math Slash: keep dark cards readable in light mode */
+.light .convert-popup-card,
+.light .convert-popup-card * {
+  color: #fff !important;
+}
+.light .convert-popup-card .text-\[\#555\] { color: #888 !important; }
+.light .convert-popup-card input {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #1f1f1f !important;
+}
+/* Convert button keeps its inline white bg + black text */
+.light .convert-popup-card button.font-bold { color: #000 !important; }
+.light .daily-limit-card,
+.light .daily-limit-card * {
+  color: #fff !important;
+}
+.light .daily-limit-card .text-\[10px\] { color: #888 !important; }

@@ -3358,7 +3358,7 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
-      <div className="w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
+      <div className="convert-popup-card w-full max-w-md p-6 rounded-2xl relative" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-3 right-3 text-[#555] hover:text-white"><X size={18} /></button>
         <h3 className="font-mono text-white text-lg mb-1">Convert Points → zkLTC</h3>
         <p className="font-mono text-[11px] text-[#555] mb-2 uppercase">Tier: {tierKey} · 1 PT = {rate > 0 ? rate.toFixed(7) : '—'} ZKLTC</p>
@@ -3641,7 +3641,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-brand-text-primary text-sm">{gamesToday} / {MS_DAILY_LIMIT}</div>
               </div>
               {gamesLeft <= 0 ? (
-                <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <div className="daily-limit-card mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[160px] lg:min-w-0 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
                   <div className="text-[10px] uppercase font-mono" style={{ color: '#555' }}>Daily Limit Reached</div>
                   <div className="text-white font-mono text-sm mt-0.5">Resets in {midnightIST}</div>
                   <div className="font-mono mt-0.5" style={{ color: '#333', fontSize: 9 }}>Resets at 00:00 IST</div>
