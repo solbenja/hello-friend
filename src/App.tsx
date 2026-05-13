@@ -3547,11 +3547,12 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
       return Number(zkltc) || 0;
     } catch { return 0; }
   })();
-  const MS_DAILY_LIMIT = 10;
+  const MS_DAILY_LIMIT = 15;
   const gamesPlayed = Number(stats?.gamesPlayed ?? stats?.gamesPlayedToday ?? stats?.gamesToday ?? 0);
   const gamesLeft = Number(stats?.gamesLeft ?? Math.max(0, MS_DAILY_LIMIT - gamesPlayed));
   const gamesToday = Math.min(gamesPlayed, MS_DAILY_LIMIT);
-  const isFree = stats?.isFree ?? (tierNum >= 3);
+  const freeGamesLeft = Number(stats?.freeGamesLeft ?? 0);
+  const isFree = freeGamesLeft > 0 || (stats?.isFree ?? (tierNum >= 3));
   const gameCost = stats?.gameCost ?? 0;
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
