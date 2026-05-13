@@ -1625,7 +1625,7 @@
   bindTap(document.getElementById('exit-btn'), () => {
     setGameState('menu');
     score = 0; currentLevel = 0; streak = 0; totalCorrect = 0; totalWrong = 0;
-    window.location.href = '/games';
+    try { window.parent?.postMessage({ type: 'litdex:mathslash:exit' }, '*'); } catch {}
   });
 
   // ═════════════════════════════════════════════════════
