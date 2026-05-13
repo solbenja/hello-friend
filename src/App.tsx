@@ -3252,7 +3252,7 @@ const tierKeyFromAny = (t: any): string => {
 const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initialCooldown = 0 }: any) => {
   const [val, setVal] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string } | null>(null);
+  const [success, setSuccess] = useState<{ pts: number; zkltc: string; txHash?: string; explorerUrl?: string } | null>(null);
   const [errMsg, setErrMsg] = useState<string>("");
   const [cooldown, setCooldown] = useState<number>(0);
 
@@ -3269,10 +3269,10 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 
   const tierKey = tierKeyFromAny(tier);
   const rate = RATE_BY_TIER[tierKey] ?? RATE_BY_TIER.common;
-  const available = Number(points ?? 0);
+  const available = Math.max(0, Math.floor(Number(points ?? 0)));
   const n = parseInt(val) || 0;
+  const MAX_POINTS = Math.max(1, Math.min(10000, available || 10000));
   const preview = (n * rate).toFixed(7);
-  const MAX_POINTS = 10000;
 
   const fmtCooldown = (s: number) => {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
