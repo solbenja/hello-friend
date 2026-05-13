@@ -1490,9 +1490,21 @@
   }, { passive: false });
   inputLayer.addEventListener('touchend', () => isSlicing = false);
 
-  document.getElementById('start-btn').addEventListener('click', async () => {
+  // Helper: bind both click + touchend so mobile taps work reliably
+  function bindTap(el, handler) {
+    if (!el) return;
+    el.addEventListener('click', handler);
+    el.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handler(e);
+    }, { passive: false });
+  }
+
+  bindTap(document.getElementById('start-btn'), async () => {
     const btn = document.getElementById('start-btn');
     const errEl = document.getElementById('start-error');
+    if (btn.style.pointerEvents === 'none') return;
     errEl.style.display = 'none';
     btn.textContent = 'STARTING…';
     btn.style.opacity = '0.5';
@@ -1508,9 +1520,10 @@
     }
   });
 
-  document.getElementById('restart-btn').addEventListener('click', async () => {
+  bindTap(document.getElementById('restart-btn'), async () => {
     const btn = document.getElementById('restart-btn');
     const errEl = document.getElementById('go-error');
+    if (btn.style.pointerEvents === 'none') return;
     errEl.style.display = 'none';
     btn.textContent = 'STARTING…';
     btn.style.opacity = '0.5';
@@ -1531,7 +1544,7 @@
     }
   });
 
-  document.getElementById('tut-go-btn').addEventListener('click', beginActualGame);
+  bindTap(document.getElementById('tut-go-btn'), beginActualGame);
 
   // ═════════════════════════════════════════════════════
   //  RESIZE
