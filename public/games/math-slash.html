@@ -1623,7 +1623,8 @@
   bindTap(document.getElementById('tut-go-btn'), beginActualGame);
 
   bindTap(document.getElementById('exit-btn'), () => {
-    gameState = 'menu';
+    setGameState('menu');
+    score = 0; currentLevel = 0; streak = 0; totalCorrect = 0; totalWrong = 0;
     window.location.href = '/games';
   });
 
