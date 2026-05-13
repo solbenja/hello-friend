@@ -1602,6 +1602,11 @@
 
   bindTap(document.getElementById('tut-go-btn'), beginActualGame);
 
+  bindTap(document.getElementById('exit-btn'), () => {
+    gameState = 'menu';
+    window.location.href = '/games';
+  });
+
   // ═════════════════════════════════════════════════════
   //  RESIZE
   // ═════════════════════════════════════════════════════
