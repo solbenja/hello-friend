@@ -3534,7 +3534,7 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
               </div>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Games Today</div>
-                <div className="text-brand-text-primary text-sm">{gamesToday} / 100</div>
+                <div className="text-brand-text-primary text-sm">{Math.min(gamesToday, 10)} / 10</div>
               </div>
               <div className="mb-0 lg:mb-3 shrink-0 lg:shrink snap-start min-w-[120px] lg:min-w-0">
                 <div className="text-[10px] uppercase text-brand-text-muted">Games Remaining</div>
