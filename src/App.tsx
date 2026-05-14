@@ -1341,7 +1341,6 @@ const DeployPage = () => {
         </Card>
       </div>
 
-      <DeployerTotalCard />
       <div className="flex flex-wrap justify-center gap-2 mb-12">
         {types.map((t) => (
           <button
