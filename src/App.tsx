@@ -782,7 +782,6 @@ const CheckinPage = () => {
             <div className="text-[8px] font-bold text-white/20 uppercase tracking-[0.4em] mt-1 ml-1">Day Streak Active</div>
             <CheckinTotalLabel />
           </div>
-          </div>
 
           <motion.button
             whileHover={!isTodayChecked && !checkingIn ? { scale: 1.02, backgroundColor: 'rgba(255,255,255,1)' } : {}}
