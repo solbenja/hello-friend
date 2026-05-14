@@ -3528,6 +3528,62 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   );
 };
 
+const MATHSLASH_API_URL = 'https://game.test-hub.xyz';
+const WeeklyLeaderboard = ({ className = '' }: { className?: string }) => {
+  const [board, setBoard] = useState<any>(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`);
+        if (r.ok) setBoard(await r.json());
+      } catch { /* ignore */ }
+    };
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
+  const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
+  const week = board?.week || board?.currentWeek || '';
+  const mask = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
+  return (
+    <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${className}`}>
+      <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
+      {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
+      {entries.length === 0 ? (
+        <div className="text-brand-text-muted text-xs">No games this week yet</div>
+      ) : (
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="text-brand-text-muted"><th className="text-left font-normal">#</th><th className="text-left font-normal">Wallet</th><th className="text-right font-normal">Score</th></tr>
+          </thead>
+          <tbody>
+            {entries.slice(0, 20).map((e: any, i: number) => {
+              const c = i === 0 ? 'text-brand-text-primary font-bold' : 'text-brand-text-muted';
+              const w = e.wallet || e.walletAddress || e.address || '';
+              const displayWallet = w.includes('...') ? w : mask(w);
+              return (
+                <tr key={i} className={c}>
+                  <td className="py-1">{i + 1}</td>
+                  <td className="py-1">{displayWallet}</td>
+                  <td className="py-1 text-right">{e.totalScore ?? e.score ?? e.points ?? 0}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div className="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-text-muted space-y-0.5">
+        <div>Rank 1: 1 zkLTC + 2,000 pts</div>
+        <div>Rank 2: 0.5 zkLTC + 1,000 pts</div>
+        <div>Rank 3: 0.3 zkLTC + 500 pts</div>
+        <div>Rank 4-10: 0.1 zkLTC + 200 pts</div>
+        <div>Rank 11-20: 0.001 zkLTC + 100 pts</div>
+        <div className="pt-2 opacity-70">Top 20 rewarded every Sunday midnight IST</div>
+      </div>
+    </div>
+  );
+};
+
 const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const { address, isConnected } = useAccount();
   const [stats, setStats] = useState<any>(null);
@@ -3677,8 +3733,11 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="math-slash-page py-8 max-w-7xl mx-auto px-4">
       <button onClick={onBack} className="font-mono text-[11px] uppercase text-brand-text-muted hover:text-brand-text-primary mb-6">← Back to Games</button>
       {!isConnected ? (
-        <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted">
-          Connect your wallet using the navbar button to play
+        <div className="grid gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
+          <div className="p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted self-start">
+            Connect your wallet using the navbar button to play
+          </div>
+          <WeeklyLeaderboard />
         </div>
       ) : (
          <div className={`grid gap-5 ${playing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_1fr_280px]'}`}>
@@ -3909,21 +3968,24 @@ const GamesPage = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 max-w-6xl mx-auto px-4">
       <h1 className="text-3xl font-bold tracking-tighter text-white mb-8">Games</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="games-card-dark rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-          <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-              <Gamepad2 size={32} className="text-white" />
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="games-card-dark rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+            <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+                <Gamepad2 size={32} className="text-white" />
+              </div>
+            </div>
+            <div className="p-6 flex-1 flex flex-col">
+              <h3 className="font-bold text-xl text-white mb-2">MATH SLASH</h3>
+              <p className="text-sm text-[#888] mb-6 leading-relaxed">Slash the equations. Earn points, convert to zkLTC.</p>
+              <button onClick={() => setSub('math-slash')} className="mt-auto w-full py-3 rounded-lg bg-white text-black font-mono font-bold text-xs uppercase tracking-widest">
+                Play Now
+              </button>
             </div>
           </div>
-          <div className="p-6 flex-1 flex flex-col">
-            <h3 className="font-bold text-xl text-white mb-2">MATH SLASH</h3>
-            <p className="text-sm text-[#888] mb-6 leading-relaxed">Slash the equations. Earn points, convert to zkLTC.</p>
-            <button onClick={() => setSub('math-slash')} className="mt-auto w-full py-3 rounded-lg bg-white text-black font-mono font-bold text-xs uppercase tracking-widest">
-              Play Now
-            </button>
-          </div>
         </div>
+        <WeeklyLeaderboard />
       </div>
     </motion.div>
   );
