@@ -3968,21 +3968,24 @@ const GamesPage = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 max-w-6xl mx-auto px-4">
       <h1 className="text-3xl font-bold tracking-tighter text-white mb-8">Games</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="games-card-dark rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-          <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-              <Gamepad2 size={32} className="text-white" />
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="games-card-dark rounded-2xl overflow-hidden flex flex-col" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+            <div className="h-44 flex items-center justify-center" style={{ background: '#111' }}>
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+                <Gamepad2 size={32} className="text-white" />
+              </div>
+            </div>
+            <div className="p-6 flex-1 flex flex-col">
+              <h3 className="font-bold text-xl text-white mb-2">MATH SLASH</h3>
+              <p className="text-sm text-[#888] mb-6 leading-relaxed">Slash the equations. Earn points, convert to zkLTC.</p>
+              <button onClick={() => setSub('math-slash')} className="mt-auto w-full py-3 rounded-lg bg-white text-black font-mono font-bold text-xs uppercase tracking-widest">
+                Play Now
+              </button>
             </div>
           </div>
-          <div className="p-6 flex-1 flex flex-col">
-            <h3 className="font-bold text-xl text-white mb-2">MATH SLASH</h3>
-            <p className="text-sm text-[#888] mb-6 leading-relaxed">Slash the equations. Earn points, convert to zkLTC.</p>
-            <button onClick={() => setSub('math-slash')} className="mt-auto w-full py-3 rounded-lg bg-white text-black font-mono font-bold text-xs uppercase tracking-widest">
-              Play Now
-            </button>
-          </div>
         </div>
+        <WeeklyLeaderboard />
       </div>
     </motion.div>
   );
