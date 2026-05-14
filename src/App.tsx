@@ -101,14 +101,62 @@ const Card = ({ children, className = "", ...props }: any) => (
   </div>
 );
 
+// --- Ecosystem Stats Hook (fetches once + every 60s) ---
+type EcosystemStats = {
+  swap: { txns: number; transfers: number; pairs: number };
+  nft: { txns: number; mints: number; claims: number };
+  messenger: { txns: number };
+  deployer: { txns: number };
+  checkin: { txns: number };
+  game: { gamesPlayed: number; pointsEarned: number; conversions: number; zkltcDistributed: number };
+  totalOnChain: number;
+};
+const useEcosystemStats = () => {
+  const [stats, setStats] = useState<EcosystemStats | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const fetchStats = async () => {
+      try {
+        const r = await fetch('https://game.test-hub.xyz/stats/ecosystem');
+        if (!r.ok) return;
+        const d = await r.json();
+        if (alive) setStats(d);
+      } catch {}
+    };
+    fetchStats();
+    const id = setInterval(fetchStats, 60000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+  return stats;
+};
+const formatStat = (n: number | undefined | null): string => {
+  if (n == null || isNaN(Number(n))) return "...";
+  const v = Number(n);
+  if (v >= 1_000_000) return `${Math.floor(v / 1_000_000)}M+`;
+  if (v >= 1_000) return `${Math.floor(v / 1_000)}K+`;
+  return `${v}`;
+};
+const EcosystemStatPill = ({ value, label }: { value: string; label: string }) => (
+  <div className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 backdrop-blur-xl flex flex-col items-center min-w-[100px]">
+    <div className="text-sm font-black text-white tabular-nums tracking-tight">{value}</div>
+    <div className="text-[8px] font-bold text-brand-text-muted uppercase tracking-[0.15em] mt-0.5 text-center leading-tight">{label}</div>
+  </div>
+);
+
 /// --- Page: Swap ---
 const SwapPage = () => {
+  const eco = useEcosystemStats();
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }} 
       animate={{ opacity: 1, scale: 1 }} 
       className="flex flex-col items-center justify-center min-h-[80vh] px-4 w-full py-12"
     >
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        <EcosystemStatPill value={`${formatStat(eco?.swap.txns)} Swaps`} label="Total Swaps" />
+        <EcosystemStatPill value={`${eco?.swap.pairs ?? '...'} Pairs`} label="Liquidity Pairs" />
+        <EcosystemStatPill value={`${formatStat(eco?.totalOnChain)} Txns`} label="Total On-chain" />
+      </div>
       <SwapCard className="brand-glow-hover transition-all duration-500" />
     </motion.div>
   );
@@ -117,12 +165,17 @@ const SwapPage = () => {
 // --- Page: Pool ---
 const PoolPage = () => {
   const { isConnected } = useAccount();
+  const eco = useEcosystemStats();
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }} 
       animate={{ opacity: 1, scale: 1 }} 
       className="flex flex-col items-center justify-center min-h-[80vh] px-4 w-full py-12"
     >
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        <EcosystemStatPill value={`${formatStat(eco?.swap.txns)} Swaps`} label="Total Swaps" />
+        <EcosystemStatPill value={`${eco?.swap.pairs ?? '...'} Pairs`} label="Liquidity Pairs" />
+      </div>
       <SwapCard mode="pool" className="brand-glow-hover transition-all duration-500" />
       
       {!isConnected && (
