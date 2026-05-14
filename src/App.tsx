@@ -3733,8 +3733,11 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="math-slash-page py-8 max-w-7xl mx-auto px-4">
       <button onClick={onBack} className="font-mono text-[11px] uppercase text-brand-text-muted hover:text-brand-text-primary mb-6">← Back to Games</button>
       {!isConnected ? (
-        <div className="max-w-md mx-auto p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted">
-          Connect your wallet using the navbar button to play
+        <div className="grid gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
+          <div className="p-8 rounded-2xl text-center font-mono text-sm bg-brand-surface border border-brand-border text-brand-text-muted self-start">
+            Connect your wallet using the navbar button to play
+          </div>
+          <WeeklyLeaderboard />
         </div>
       ) : (
          <div className={`grid gap-5 ${playing ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[260px_1fr_280px]'}`}>
