@@ -780,6 +780,8 @@ const CheckinPage = () => {
               {loading ? "..." : streak}
             </div>
             <div className="text-[8px] font-bold text-white/20 uppercase tracking-[0.4em] mt-1 ml-1">Day Streak Active</div>
+            <CheckinTotalLabel />
+          </div>
           </div>
 
           <motion.button
