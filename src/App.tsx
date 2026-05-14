@@ -3528,6 +3528,62 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
   );
 };
 
+const MATHSLASH_API_URL = 'https://game.test-hub.xyz';
+const WeeklyLeaderboard = ({ className = '' }: { className?: string }) => {
+  const [board, setBoard] = useState<any>(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`);
+        if (r.ok) setBoard(await r.json());
+      } catch { /* ignore */ }
+    };
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
+  const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
+  const week = board?.week || board?.currentWeek || '';
+  const mask = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
+  return (
+    <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${className}`}>
+      <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
+      {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
+      {entries.length === 0 ? (
+        <div className="text-brand-text-muted text-xs">No games this week yet</div>
+      ) : (
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="text-brand-text-muted"><th className="text-left font-normal">#</th><th className="text-left font-normal">Wallet</th><th className="text-right font-normal">Score</th></tr>
+          </thead>
+          <tbody>
+            {entries.slice(0, 20).map((e: any, i: number) => {
+              const c = i === 0 ? 'text-brand-text-primary font-bold' : 'text-brand-text-muted';
+              const w = e.wallet || e.walletAddress || e.address || '';
+              const displayWallet = w.includes('...') ? w : mask(w);
+              return (
+                <tr key={i} className={c}>
+                  <td className="py-1">{i + 1}</td>
+                  <td className="py-1">{displayWallet}</td>
+                  <td className="py-1 text-right">{e.totalScore ?? e.score ?? e.points ?? 0}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div className="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-text-muted space-y-0.5">
+        <div>Rank 1: 1 zkLTC + 2,000 pts</div>
+        <div>Rank 2: 0.5 zkLTC + 1,000 pts</div>
+        <div>Rank 3: 0.3 zkLTC + 500 pts</div>
+        <div>Rank 4-10: 0.1 zkLTC + 200 pts</div>
+        <div>Rank 11-20: 0.001 zkLTC + 100 pts</div>
+        <div className="pt-2 opacity-70">Top 20 rewarded every Sunday midnight IST</div>
+      </div>
+    </div>
+  );
+};
+
 const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
   const { address, isConnected } = useAccount();
   const [stats, setStats] = useState<any>(null);
