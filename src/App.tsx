@@ -143,6 +143,16 @@ const EcosystemStatPill = ({ value, label }: { value: string; label: string }) =
   </div>
 );
 
+const NFTEcosystemStats = () => {
+  const eco = useEcosystemStats();
+  return (
+    <div className="flex flex-wrap gap-2 mt-4">
+      <EcosystemStatPill value={`${formatStat(eco?.nft.mints)}`} label="NFTs Minted" />
+      <EcosystemStatPill value={`${formatStat(eco?.nft.claims)}`} label="Rewards Claimed" />
+    </div>
+  );
+};
+
 /// --- Page: Swap ---
 const SwapPage = () => {
   const eco = useEcosystemStats();
