@@ -153,6 +153,28 @@ const NFTEcosystemStats = () => {
   );
 };
 
+const CheckinTotalLabel = () => {
+  const eco = useEcosystemStats();
+  if (!eco) return null;
+  return (
+    <div className="text-[8px] font-bold text-white/40 uppercase tracking-[0.3em] mt-2 tabular-nums">
+      {eco.checkin.txns.toLocaleString()} Total Check-ins
+    </div>
+  );
+};
+
+const DeployerTotalCard = () => {
+  const eco = useEcosystemStats();
+  return (
+    <div className="p-6 bg-white/[0.03] border border-white/10 rounded-[12px] backdrop-blur-xl mb-12">
+      <p className="text-[10px] font-bold text-brand-text-muted uppercase tracking-[0.2em] mb-2">Total Deployed</p>
+      <h3 className="text-4xl font-black text-white italic tracking-tighter">
+        {formatStat(eco?.deployer.txns)}
+      </h3>
+    </div>
+  );
+};
+
 /// --- Page: Swap ---
 const SwapPage = () => {
   const eco = useEcosystemStats();
