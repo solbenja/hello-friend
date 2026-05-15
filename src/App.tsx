@@ -4110,18 +4110,34 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 };
 
 const MATHSLASH_API_URL = 'https://game.test-hub.xyz';
+
+// Fetch JSON with hard timeout. Returns null on timeout/error.
+const fetchJsonWithTimeout = async (url: string, ms = 8000): Promise<any | null> => {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+};
+
 const WeeklyLeaderboard = ({ className = '' }: { className?: string }) => {
   const [board, setBoard] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let alive = true;
+    let retryTimer: any = null;
     const load = async () => {
-      try {
-        const r = await fetch(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`);
-        if (r.ok) setBoard(await r.json());
-      } catch { /* ignore */ }
+      const data = await fetchJsonWithTimeout(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`, 8000);
+      if (!alive) return;
+      if (data) { setBoard(data); setLoaded(true); }
+      else { retryTimer = setTimeout(load, 30000); }
     };
     load();
     const t = setInterval(load, 60000);
-    return () => clearInterval(t);
+    return () => { alive = false; clearInterval(t); if (retryTimer) clearTimeout(retryTimer); };
   }, []);
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
@@ -4130,7 +4146,17 @@ const WeeklyLeaderboard = ({ className = '' }: { className?: string }) => {
     <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${className}`}>
       <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
       {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
-      {entries.length === 0 ? (
+      {!loaded ? (
+        <div className="space-y-2">
+          {[0,1,2,3,4].map((i) => (
+            <div key={i} className="flex items-center justify-between text-[11px] text-brand-text-muted">
+              <span>{i + 1}.</span>
+              <span className="opacity-50">Loading…</span>
+              <span>—</span>
+            </div>
+          ))}
+        </div>
+      ) : entries.length === 0 ? (
         <div className="text-brand-text-muted text-xs">No games this week yet</div>
       ) : (
         <table className="w-full text-[11px]">
@@ -4179,33 +4205,42 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
 
   const lowerAddr = address ? address.toLowerCase() : '';
 
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [boardLoaded, setBoardLoaded] = useState(false);
+  const retryRef = useRef<{ stats?: any; board?: any }>({});
+
   const fetchStats = async () => {
     if (!lowerAddr) return;
-    try {
-      const r = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${lowerAddr}`);
-      if (r.ok) setStats(await r.json());
-    } catch { /* ignore */ }
-    try {
-      const r2 = await fetch(`${MATHSLASH_API}/user/${lowerAddr}`);
-      if (r2.ok) setUser(await r2.json());
-    } catch { /* ignore */ }
-    try {
-      const r3 = await fetch(`${MATHSLASH_API}/convert/stats/${lowerAddr}`);
-      if (r3.ok) setConvertStats(await r3.json());
-    } catch { /* ignore */ }
+    // Run all 3 stats endpoints in parallel; never block render.
+    const [s, u, c] = await Promise.allSettled([
+      fetchJsonWithTimeout(`${MATHSLASH_API}/game/mathslash/stats/${lowerAddr}`, 8000),
+      fetchJsonWithTimeout(`${MATHSLASH_API}/user/${lowerAddr}`, 8000),
+      fetchJsonWithTimeout(`${MATHSLASH_API}/convert/stats/${lowerAddr}`, 8000),
+    ]);
+    let anyOk = false;
+    if (s.status === 'fulfilled' && s.value) { setStats(s.value); anyOk = true; }
+    if (u.status === 'fulfilled' && u.value) { setUser(u.value); anyOk = true; }
+    if (c.status === 'fulfilled' && c.value) { setConvertStats(c.value); anyOk = true; }
+    if (anyOk) setStatsLoaded(true);
+    else {
+      if (retryRef.current.stats) clearTimeout(retryRef.current.stats);
+      retryRef.current.stats = setTimeout(() => { fetchStats(); }, 30000);
+    }
   };
   const fetchBoard = async () => {
-    try {
-      const r = await fetch(`${MATHSLASH_API}/game/mathslash/weekly-leaderboard`);
-      if (r.ok) setBoard(await r.json());
-    } catch { /* ignore */ }
+    const data = await fetchJsonWithTimeout(`${MATHSLASH_API}/game/mathslash/weekly-leaderboard`, 8000);
+    if (data) { setBoard(data); setBoardLoaded(true); }
+    else {
+      if (retryRef.current.board) clearTimeout(retryRef.current.board);
+      retryRef.current.board = setTimeout(() => { fetchBoard(); }, 30000);
+    }
   };
 
-  useEffect(() => { if (isConnected) fetchStats(); const t = setInterval(() => { if (isConnected) fetchStats(); }, 15000); return () => clearInterval(t); }, [isConnected, lowerAddr]);
+  useEffect(() => { if (isConnected) fetchStats(); const t = setInterval(() => { if (isConnected) fetchStats(); }, 15000); return () => { clearInterval(t); if (retryRef.current.stats) clearTimeout(retryRef.current.stats); }; }, [isConnected, lowerAddr]);
   useEffect(() => {
     fetchBoard();
     const t = setInterval(fetchBoard, 60000);
-    return () => clearInterval(t);
+    return () => { clearInterval(t); if (retryRef.current.board) clearTimeout(retryRef.current.board); };
   }, []);
 
   // Listen for game-end postMessage from the math-slash iframe and emit notifications
@@ -4431,7 +4466,17 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
             {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
-            {entries.length === 0 ? (
+            {!boardLoaded ? (
+              <div className="space-y-2">
+                {[0,1,2,3,4].map((i) => (
+                  <div key={i} className="flex items-center justify-between text-[11px] text-brand-text-muted">
+                    <span>{i + 1}.</span>
+                    <span className="opacity-50">Loading…</span>
+                    <span>—</span>
+                  </div>
+                ))}
+              </div>
+            ) : entries.length === 0 ? (
               <div className="text-brand-text-muted text-xs">No games this week yet</div>
             ) : (
               <table className="w-full text-[11px]">
@@ -4498,22 +4543,25 @@ const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const [stats, setStats] = useState<{ totalTxns: number; totalPoints: number; totalZkltc: number } | null>(null);
   useEffect(() => {
     let alive = true;
+    let retry: any = null;
     const load = async () => {
-      try {
-        const r = await fetch('https://game.test-hub.xyz/convert/stats/global');
-        const d = await r.json();
-        if (!alive) return;
+      const d = await fetchJsonWithTimeout('https://game.test-hub.xyz/convert/stats/global', 8000);
+      if (!alive) return;
+      if (d) {
         const u = d?.global ?? d?.stats ?? d ?? {};
         setStats({
           totalTxns: Number(u.totalTxns ?? 0),
           totalPoints: Number(u.totalPointsConverted ?? u.totalPoints ?? 0),
           totalZkltc: Number(u.totalZkltcSent ?? u.totalZkltcDistributed ?? u.totalZkltc ?? u.totalZkltcReceived ?? 0),
         });
-      } catch {}
+      } else {
+        if (retry) clearTimeout(retry);
+        retry = setTimeout(load, 30000);
+      }
     };
     load();
     const id = setInterval(load, 30000);
-    return () => { alive = false; clearInterval(id); };
+    return () => { alive = false; clearInterval(id); if (retry) clearTimeout(retry); };
   }, [reloadKey]);
 
   const Row = ({ label, value }: { label: string; value: string }) => (
