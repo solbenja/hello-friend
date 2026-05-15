@@ -232,12 +232,56 @@ async function ensureChain(targetChainId: number) {
   }
 }
 
+// Logo map matched to swap-page coin assets + Sepolia ETH override
+const BRIDGE_LOGO_BASE = "https://raw.githubusercontent.com/zorodas/friendly-greetings/main/public/coins";
+const BRIDGE_TOKEN_LOGO: Record<string, string> = {
+  zkLTC: `${BRIDGE_LOGO_BASE}/zkltc.jpg`,
+  WZKLTC: `${BRIDGE_LOGO_BASE}/zkltc.jpg`,
+  ETH: "https://raw.githubusercontent.com/zorodas/remix-of-remix-of-hello-world-connect/main/public/coins/sepolia_eth_logo.png",
+};
+
+const BridgeTokenLogo = ({ symbol, size = 20 }: { symbol: string; size?: number }) => {
+  if (symbol === 'LDEX') {
+    return (
+      <div
+        className="rounded-full bg-white flex items-center justify-center token-logo-wrapper border border-brand-border shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <span className="text-black font-black" style={{ fontSize: Math.round(size * 0.45) }}>LD</span>
+      </div>
+    );
+  }
+  const src = BRIDGE_TOKEN_LOGO[symbol];
+  if (!src) {
+    return (
+      <div
+        className="rounded-full bg-white/10 border border-brand-border flex items-center justify-center shrink-0 token-logo-wrapper"
+        style={{ width: size, height: size }}
+      >
+        <span className="text-white font-bold" style={{ fontSize: Math.round(size * 0.4) }}>{symbol.slice(0,2)}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-full token-logo-wrapper shrink-0" style={{ width: size, height: size }}>
+      <img
+        src={src}
+        alt={`${symbol} logo`}
+        className="size-full rounded-full border border-brand-border object-cover"
+        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+};
+
 const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const [from, setFrom] = useState<BridgeChain>('litvm');
   const [tokenSymbol, setTokenSymbol] = useState<string>('zkLTC');
   const [tokenMenuOpen, setTokenMenuOpen] = useState(false);
+  const [tokenQuery, setTokenQuery] = useState('');
   const [amount, setAmount] = useState<string>('1');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>('');
@@ -248,14 +292,12 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   const tokens = BRIDGE_TOKENS[from];
   const token = tokens.find(t => t.symbol === tokenSymbol) || tokens[0];
 
-  // Reset token when switching chain to a chain that doesn't have current token
   useEffect(() => {
     if (!tokens.find(t => t.symbol === tokenSymbol)) {
       setTokenSymbol(tokens[0].symbol);
     }
   }, [from]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch balances for current chain tokens
   useEffect(() => {
     if (!address) { setBalances({}); return; }
     let cancelled = false;
@@ -293,6 +335,17 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
     return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
   };
 
+  // Bridge cap is 1 token per tx; effective max = min(balance, 1)
+  const balNum = Number(balances[token.symbol] || '0');
+  const maxAmt = Math.min(isFinite(balNum) ? balNum : 0, 1);
+  const sliderPct = maxAmt > 0 ? Math.min(100, (Number(amount || '0') / maxAmt) * 100) : 0;
+
+  const setPct = (pct: number) => {
+    if (maxAmt <= 0) return;
+    const amt = (maxAmt * pct) / 100;
+    setAmount(amt.toFixed(6).replace(/\.?0+$/, ''));
+  };
+
   const submit = async () => {
     setErr(''); setSuccess(null);
     if (!isConnected) { openConnectModal?.(); return; }
@@ -310,7 +363,6 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
         if (token.method === 'lockZKLTC') {
           tx = await bridge.lockZKLTC({ value: wei });
         } else {
-          // LDEX: approve bridge then lock
           const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
           const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
           await apTx.wait();
@@ -346,15 +398,30 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  const ChainPill = ({ which }: { which: BridgeChain }) => (
-    <div className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-      <div className="text-[9px] uppercase tracking-widest text-brand-text-muted mb-1">Network</div>
-      <div className="font-bold text-sm text-white">{which === 'litvm' ? 'LitVM' : 'Sepolia'}</div>
+  const ChainPill = ({ which, label }: { which: BridgeChain; label: string }) => (
+    <div className="flex-1 flex flex-col gap-2 rounded-md border border-brand-border bg-brand-bg px-3 py-3">
+      <div className="text-[9px] uppercase tracking-widest text-brand-text-muted font-bold">{label}</div>
+      <div className="flex items-center gap-2">
+        <div className="size-6 rounded-full bg-white/10 border border-brand-border flex items-center justify-center">
+          <span className="text-[9px] font-black text-white">{which === 'litvm' ? 'LV' : 'SE'}</span>
+        </div>
+        <div className="font-bold text-sm text-white">{which === 'litvm' ? 'LitVM' : 'Sepolia'}</div>
+      </div>
     </div>
   );
 
+  const filteredTokens = tokens.filter(t =>
+    !tokenQuery || t.symbol.toLowerCase().includes(tokenQuery.toLowerCase())
+  );
+
+  const receivePreview = (() => {
+    const n = Number(amount || '0');
+    if (!isFinite(n) || n <= 0) return `0 ${token.destSymbol}`;
+    return `${n.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.destSymbol}`;
+  })();
+
   return (
-    <div className="w-full max-w-[480px] bg-brand-surface border border-brand-border rounded-2xl p-6">
+    <div className="w-full max-w-md sm:max-w-lg bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6">
       <div className="flex items-center justify-between mb-5">
         <button onClick={onBack} className="text-xs font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors">
           ← SWAP
@@ -377,62 +444,130 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 mb-4">
-            <ChainPill which={from} />
-            <button onClick={flip} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" aria-label="Swap chains">
+          {/* FROM / TO chain cards (swap-page styling) */}
+          <div className="flex items-stretch gap-2 mb-5">
+            <ChainPill which={from} label="From" />
+            <button
+              onClick={flip}
+              className="self-center rounded-full border border-brand-border bg-brand-surface-2 hover:bg-white/10 p-2 transition-colors"
+              aria-label="Swap chains"
+            >
               <ArrowLeftRight size={16} className="text-white" />
             </button>
-            <ChainPill which={to} />
+            <ChainPill which={to} label="To" />
           </div>
 
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[9px] uppercase tracking-widest text-brand-text-muted">Token</div>
-              <div className="text-[10px] font-mono text-white/50">Bal: {fmtBal(balances[token.symbol])}</div>
+          {/* Amount input — matches swap "You pay" box */}
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="bridge-amount" className="text-xs uppercase font-bold text-brand-text-muted tracking-widest">
+                You bridge
+              </label>
+              <span className="text-[10px] font-mono text-brand-text-muted">
+                Bal: {fmtBal(balances[token.symbol])}
+              </span>
             </div>
-            <div className="relative">
+            <div className="flex items-center gap-3 rounded-md border border-brand-border bg-brand-bg px-3 py-2.5 focus-within:ring-1 focus-within:ring-white relative">
+              {/* Token selector trigger (left) */}
               <button
+                type="button"
                 onClick={() => setTokenMenuOpen(o => !o)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 transition-all"
+                className="inline-flex items-center gap-2 rounded border border-brand-border bg-brand-surface-2 hover:bg-white/10 px-2.5 py-1.5 text-xs font-bold transition-all"
               >
-                <span className="font-bold text-sm text-white">{token.symbol}</span>
-                <svg className={cn("w-4 h-4 text-white/60 transition-transform", tokenMenuOpen && "rotate-180")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <BridgeTokenLogo symbol={token.symbol} size={20} />
+                <span className="font-bold">{token.symbol}</span>
+                <span aria-hidden className="ml-1 text-[8px]">▼</span>
               </button>
+
+              <button
+                onClick={() => maxAmt > 0 && setAmount(String(maxAmt))}
+                className="px-2 py-1 text-[9px] font-bold bg-white text-black rounded uppercase hover:opacity-90 transition-all font-sans"
+              >
+                MAX
+              </button>
+
+              <input
+                id="bridge-amount"
+                inputMode="decimal"
+                pattern="^[0-9]*[.,]?[0-9]*$"
+                placeholder="0.00"
+                className="flex-1 min-w-0 bg-transparent outline-none text-right text-lg sm:text-xl placeholder:text-brand-text-muted font-mono"
+                value={amount}
+                onChange={(e) => {
+                  const v = e.target.value.replace(',', '.');
+                  if (v === '' || /^[0-9]*\.?[0-9]*$/.test(v)) setAmount(v);
+                }}
+              />
+
               {tokenMenuOpen && (
-                <div className="absolute z-20 mt-1 w-full rounded-xl bg-brand-surface border border-white/10 overflow-hidden shadow-xl">
-                  {tokens.map(t => (
-                    <button
-                      key={t.symbol}
-                      onClick={() => { setTokenSymbol(t.symbol); setTokenMenuOpen(false); }}
-                      className={cn(
-                        "w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold hover:bg-white/5 transition-colors",
-                        t.symbol === token.symbol ? "text-white bg-white/[0.04]" : "text-white/80"
-                      )}
-                    >
-                      <span>{t.symbol}</span>
-                      <span className="text-[10px] font-mono text-white/50">{fmtBal(balances[t.symbol])}</span>
-                    </button>
-                  ))}
+                <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
+                  <div className="p-3 border-b border-brand-border">
+                    <input
+                      type="text"
+                      value={tokenQuery}
+                      onChange={(e) => setTokenQuery(e.target.value)}
+                      placeholder="Search token…"
+                      className="w-full rounded-lg bg-brand-bg px-3 py-2 text-sm outline-none font-medium border border-brand-border focus:border-white transition-colors"
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-auto p-1">
+                    {filteredTokens.length === 0 && (
+                      <div className="px-3 py-4 text-xs text-brand-text-muted font-bold uppercase text-center">
+                        No results
+                      </div>
+                    )}
+                    {filteredTokens.map(t => (
+                      <button
+                        key={t.symbol}
+                        onClick={() => { setTokenSymbol(t.symbol); setTokenMenuOpen(false); setTokenQuery(''); }}
+                        className={cn(
+                          "w-full flex items-center gap-3 rounded-lg px-2.5 py-3 text-left transition-all",
+                          t.symbol === token.symbol ? "bg-white/10" : "hover:bg-white/5"
+                        )}
+                      >
+                        <BridgeTokenLogo symbol={t.symbol} size={24} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-white">{t.symbol}</div>
+                          <div className="text-[10px] text-brand-text-muted font-mono">→ {t.destSymbol} on {to === 'litvm' ? 'LitVM' : 'Sepolia'}</div>
+                        </div>
+                        <div className="text-[10px] font-mono text-white/60">{fmtBal(balances[t.symbol])}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Slider 25/50/75/100 */}
+            <div className="px-1 space-y-2 mt-1">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={sliderPct}
+                onChange={(e) => setPct(parseInt(e.target.value))}
+                className="w-full accent-[var(--slider-fill)] h-1.5 appearance-none bg-brand-surface-2 rounded-full cursor-pointer transition-all"
+                style={{
+                  background: `linear-gradient(to right, var(--slider-fill) ${sliderPct}%, var(--slider-track) ${sliderPct}%)`
+                }}
+              />
+              <div className="flex justify-between text-[8px] font-bold text-brand-text-muted uppercase tracking-widest px-1">
+                {[25, 50, 75, 100].map(pct => (
+                  <button key={pct} onClick={() => setPct(pct)} className="hover:text-white transition-colors">
+                    {pct}%
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[9px] uppercase tracking-widest text-brand-text-muted">Amount</div>
-              <button onClick={() => setAmount('1')} className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white">MAX 1</button>
+          {/* You receive preview */}
+          <div className="flex items-center justify-between rounded-md border border-brand-border bg-brand-bg px-3 py-2.5 mb-3">
+            <span className="text-[10px] uppercase tracking-widest text-brand-text-muted font-bold">You receive</span>
+            <div className="flex items-center gap-2">
+              <BridgeTokenLogo symbol={token.destSymbol} size={18} />
+              <span className="text-sm font-mono text-white">{receivePreview}</span>
             </div>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min="0"
-              max="1"
-              step="0.01"
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 focus:border-white/30 outline-none text-white text-lg font-bold"
-              placeholder="0.0"
-            />
           </div>
 
           <div className="flex justify-between items-center text-[11px] font-mono text-brand-text-muted mb-4 px-1">
@@ -513,9 +648,33 @@ const SwapPage = () => {
           Cross Chain
         </button>
       </div>
-      {bridgeMode
-        ? <BridgeCard onBack={exitBridge} />
-        : <SwapCard className="brand-glow-hover transition-all duration-500" />}
+      <div className="relative w-full flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          {bridgeMode ? (
+            <motion.div
+              key="bridge"
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full flex justify-center"
+            >
+              <BridgeCard onBack={exitBridge} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="swap"
+              initial={{ x: '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '-100%', opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full flex justify-center"
+            >
+              <SwapCard className="brand-glow-hover transition-all duration-500" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
