@@ -4866,16 +4866,9 @@ export default function App() {
               className="fixed left-6 right-6 z-[60] pointer-events-none flex justify-between items-end"
               style={{ bottom: footerHeight }}
             >
-                {/* Bottom Left Tools */}
-                <div className="hidden lg:flex items-center pointer-events-auto">
-                  <button 
-                    onClick={handleFaucetClick}
-                    className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all text-xs font-bold uppercase tracking-[0.2em] text-white/80 backdrop-blur-3xl shadow-2xl"
-                  >
-                    <Droplets size={16} className="group-hover:text-white transition-colors" />
-                    Faucet
-                  </button>
-                </div>
+                {/* Bottom Left Tools (faucet moved into Swap page header) */}
+                <div className="hidden" />
+
 
                 {/* Bottom Right Tools */}
                 <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
