@@ -4478,8 +4478,8 @@ const FaucetPage = () => {
         </button>
 
         <div className="mt-6 text-[10px] text-brand-text-muted space-y-1">
-          <p>• Requires $1+ assets on secondary chains (BSC/Base etc)</p>
-          <p>• 7 day cooldown between claims</p>
+          <p>• 0.1 zkLTC + 100 Points per claim</p>
+          <p>• 24 hour cooldown between claims</p>
         </div>
       </Card>
     </motion.div>
