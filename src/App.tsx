@@ -4466,7 +4466,17 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
           <div className={`p-5 rounded-2xl font-mono bg-brand-surface border border-brand-border ${playing ? 'hidden' : ''}`}>
             <div className="text-[11px] uppercase text-brand-text-primary mb-1">Weekly Leaderboard</div>
             {week && <div className="text-[10px] text-brand-text-muted mb-3">Week: {week}</div>}
-            {entries.length === 0 ? (
+            {!boardLoaded ? (
+              <div className="space-y-2">
+                {[0,1,2,3,4].map((i) => (
+                  <div key={i} className="flex items-center justify-between text-[11px] text-brand-text-muted">
+                    <span>{i + 1}.</span>
+                    <span className="opacity-50">Loading…</span>
+                    <span>—</span>
+                  </div>
+                ))}
+              </div>
+            ) : entries.length === 0 ? (
               <div className="text-brand-text-muted text-xs">No games this week yet</div>
             ) : (
               <table className="w-full text-[11px]">
