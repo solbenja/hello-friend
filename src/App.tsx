@@ -4110,18 +4110,34 @@ const ConvertPopup = ({ open, onClose, address, tier, points, onConverted, initi
 };
 
 const MATHSLASH_API_URL = 'https://game.test-hub.xyz';
+
+// Fetch JSON with hard timeout. Returns null on timeout/error.
+const fetchJsonWithTimeout = async (url: string, ms = 8000): Promise<any | null> => {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+};
+
 const WeeklyLeaderboard = ({ className = '' }: { className?: string }) => {
   const [board, setBoard] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let alive = true;
+    let retryTimer: any = null;
     const load = async () => {
-      try {
-        const r = await fetch(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`);
-        if (r.ok) setBoard(await r.json());
-      } catch { /* ignore */ }
+      const data = await fetchJsonWithTimeout(`${MATHSLASH_API_URL}/game/mathslash/weekly-leaderboard`, 8000);
+      if (!alive) return;
+      if (data) { setBoard(data); setLoaded(true); }
+      else { retryTimer = setTimeout(load, 30000); }
     };
     load();
     const t = setInterval(load, 60000);
-    return () => clearInterval(t);
+    return () => { alive = false; clearInterval(t); if (retryTimer) clearTimeout(retryTimer); };
   }, []);
   const entries: any[] = board?.leaderboard || board?.entries || board?.players || [];
   const week = board?.week || board?.currentWeek || '';
