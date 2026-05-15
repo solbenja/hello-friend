@@ -509,7 +509,7 @@ const SwapPage = () => {
               : "bg-white/[0.03] border-white/10 hover:border-white/30 hover:bg-white/[0.06] text-white/80"
           )}
         >
-          <Link2 size={14} />
+          <span className="text-base leading-none">⛓️</span>
           Cross Chain
         </button>
       </div>
