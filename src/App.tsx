@@ -4205,33 +4205,42 @@ const MathSlashPage = ({ onBack }: { onBack: () => void }) => {
 
   const lowerAddr = address ? address.toLowerCase() : '';
 
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [boardLoaded, setBoardLoaded] = useState(false);
+  const retryRef = useRef<{ stats?: any; board?: any }>({});
+
   const fetchStats = async () => {
     if (!lowerAddr) return;
-    try {
-      const r = await fetch(`${MATHSLASH_API}/game/mathslash/stats/${lowerAddr}`);
-      if (r.ok) setStats(await r.json());
-    } catch { /* ignore */ }
-    try {
-      const r2 = await fetch(`${MATHSLASH_API}/user/${lowerAddr}`);
-      if (r2.ok) setUser(await r2.json());
-    } catch { /* ignore */ }
-    try {
-      const r3 = await fetch(`${MATHSLASH_API}/convert/stats/${lowerAddr}`);
-      if (r3.ok) setConvertStats(await r3.json());
-    } catch { /* ignore */ }
+    // Run all 3 stats endpoints in parallel; never block render.
+    const [s, u, c] = await Promise.allSettled([
+      fetchJsonWithTimeout(`${MATHSLASH_API}/game/mathslash/stats/${lowerAddr}`, 8000),
+      fetchJsonWithTimeout(`${MATHSLASH_API}/user/${lowerAddr}`, 8000),
+      fetchJsonWithTimeout(`${MATHSLASH_API}/convert/stats/${lowerAddr}`, 8000),
+    ]);
+    let anyOk = false;
+    if (s.status === 'fulfilled' && s.value) { setStats(s.value); anyOk = true; }
+    if (u.status === 'fulfilled' && u.value) { setUser(u.value); anyOk = true; }
+    if (c.status === 'fulfilled' && c.value) { setConvertStats(c.value); anyOk = true; }
+    if (anyOk) setStatsLoaded(true);
+    else {
+      if (retryRef.current.stats) clearTimeout(retryRef.current.stats);
+      retryRef.current.stats = setTimeout(() => { fetchStats(); }, 30000);
+    }
   };
   const fetchBoard = async () => {
-    try {
-      const r = await fetch(`${MATHSLASH_API}/game/mathslash/weekly-leaderboard`);
-      if (r.ok) setBoard(await r.json());
-    } catch { /* ignore */ }
+    const data = await fetchJsonWithTimeout(`${MATHSLASH_API}/game/mathslash/weekly-leaderboard`, 8000);
+    if (data) { setBoard(data); setBoardLoaded(true); }
+    else {
+      if (retryRef.current.board) clearTimeout(retryRef.current.board);
+      retryRef.current.board = setTimeout(() => { fetchBoard(); }, 30000);
+    }
   };
 
-  useEffect(() => { if (isConnected) fetchStats(); const t = setInterval(() => { if (isConnected) fetchStats(); }, 15000); return () => clearInterval(t); }, [isConnected, lowerAddr]);
+  useEffect(() => { if (isConnected) fetchStats(); const t = setInterval(() => { if (isConnected) fetchStats(); }, 15000); return () => { clearInterval(t); if (retryRef.current.stats) clearTimeout(retryRef.current.stats); }; }, [isConnected, lowerAddr]);
   useEffect(() => {
     fetchBoard();
     const t = setInterval(fetchBoard, 60000);
-    return () => clearInterval(t);
+    return () => { clearInterval(t); if (retryRef.current.board) clearTimeout(retryRef.current.board); };
   }, []);
 
   // Listen for game-end postMessage from the math-slash iframe and emit notifications
