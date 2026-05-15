@@ -39,8 +39,9 @@ import {
   Download,
   ArrowRight,
   RefreshCw,
-  Sun,
+  Sun, 
   Moon,
+  Link2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
