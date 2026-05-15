@@ -184,10 +184,17 @@ const SwapPage = () => {
       animate={{ opacity: 1, scale: 1 }} 
       className="flex flex-col items-center justify-center min-h-[80vh] px-4 w-full py-12"
     >
-      <div className="flex flex-wrap justify-center gap-2 mb-6">
+      <div className="flex flex-wrap justify-center items-center gap-2 mb-6">
         <EcosystemStatPill value={`${formatStat(eco?.swap.txns)} Swaps`} label="Total Swaps" />
         <EcosystemStatPill value={`${eco?.swap.pairs ?? '...'} Pairs`} label="Liquidity Pairs" />
         <EcosystemStatPill value={`${formatStat(eco?.totalOnChain)} Txns`} label="Total On-chain" />
+        <button
+          onClick={() => { try { window.dispatchEvent(new CustomEvent('litdex:open-faucet')); } catch {} }}
+          className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.06] transition-all text-[11px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-xl"
+        >
+          <Droplets size={14} className="group-hover:text-white transition-colors" />
+          Faucet
+        </button>
       </div>
       <SwapCard className="brand-glow-hover transition-all duration-500" />
     </motion.div>
@@ -4471,8 +4478,8 @@ const FaucetPage = () => {
         </button>
 
         <div className="mt-6 text-[10px] text-brand-text-muted space-y-1">
-          <p>• Requires $1+ assets on secondary chains (BSC/Base etc)</p>
-          <p>• 7 day cooldown between claims</p>
+          <p>• 0.1 zkLTC + 100 Points per claim</p>
+          <p>• 24 hour cooldown between claims</p>
         </div>
       </Card>
     </motion.div>
@@ -4508,13 +4515,13 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
   const [status, setStatus] = useState<any>(null);
   const [fetchedAt, setFetchedAt] = useState<number>(Date.now());
   const [claiming, setClaiming] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<{ explorerUrl?: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [countdown, setCountdown] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
-    setSuccess(false);
+    setSuccess(null);
     setErrorMsg("");
     if (!wallet) return;
     let cancelled = false;
@@ -4535,12 +4542,10 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
     const tick = () => {
       const secs = nextClaimIn - Math.floor((Date.now() - fetchedAt) / 1000);
       if (secs <= 0) { setCountdown("Ready!"); return; }
-      const d = Math.floor(secs / 86400);
-      const h = Math.floor((secs % 86400) / 3600);
+      const h = Math.floor(secs / 3600);
       const m = Math.floor((secs % 3600) / 60);
       const s = secs % 60;
-      if (d > 0) setCountdown(`${d}d ${h}h ${m}m`);
-      else setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+      setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
     };
     tick();
     const i = setInterval(tick, 1000);
@@ -4555,16 +4560,10 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
       const { faucetApi } = await import('./lib/litdex-core-logic');
       const res = await faucetApi.claim(wallet);
       if (res.ok) {
-        setSuccess(true);
-        try { addNotif(wallet, { type: "faucet", title: "Faucet Claimed", message: "0.001 zkLTC sent to your wallet" }); } catch {}
+        setSuccess({ explorerUrl: res.explorerUrl });
+        try { addNotif(wallet, { type: "faucet", title: "Faucet Claimed", message: "0.1 zkLTC + 100 Points sent" }); } catch {}
       } else {
-        const reasonMap: Record<string, string> = {
-          no_external: "Need $1+ USDC or BNB on BSC chain",
-          has_enough: "You already have enough zkLTC",
-          cooldown: "Cooldown active",
-        };
-        setErrorMsg(reasonMap[res.reason || ""] || res.message || res.reason || "Claim failed");
-        // refresh status to surface countdown
+        setErrorMsg(res.message || res.reason || "Claim failed");
         try {
           const s = await faucetApi.getStatus(wallet);
           setStatus(s); setFetchedAt(Date.now());
@@ -4596,22 +4595,32 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-white" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <p className="text-lg font-bold mb-1">Claimed!</p>
-            <p className="text-sm text-brand-text-muted mb-6">0.001 zkLTC sent to your wallet</p>
+            <p className="text-lg font-bold mb-1">✅ 0.1 zkLTC + 100 Points sent!</p>
+            <p className="text-sm text-brand-text-muted mb-4">Check your wallet & points balance</p>
+            {success.explorerUrl && (
+              <a
+                href={success.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm text-white/80 hover:text-white underline underline-offset-4 mb-6"
+              >
+                View on Explorer →
+              </a>
+            )}
             <button onClick={onClose} className="w-full py-3 bg-white text-black rounded-xl font-bold text-sm">Close</button>
           </div>
         ) : !status ? (
           <p className="text-brand-text-muted text-sm py-8 text-center">Loading status…</p>
         ) : canClaim ? (
           <>
-            <p className="text-brand-text-muted text-sm mb-2">Claim 0.001 zkLTC to get started on LitVM testnet</p>
-            <p className="text-xs text-brand-text-muted/70 mb-6">Requires $1+ USDC or BNB on BSC chain</p>
+            <p className="text-brand-text-muted text-sm mb-2">Claim free testnet tokens to get started</p>
+            <p className="text-xs text-brand-text-muted/70 mb-6">Get 0.1 zkLTC + 100 Points • 24hr cooldown</p>
             <button
               onClick={handleClaim}
               disabled={claiming}
               className="w-full py-3.5 bg-white text-black rounded-xl font-bold text-base hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {claiming ? "Claiming..." : "Claim 0.001 zkLTC"}
+              {claiming ? "Claiming..." : "Claim 0.1 zkLTC + 100 Points"}
             </button>
             {errorMsg && (
               <div className="mt-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-white/40 text-xs text-center font-bold uppercase tracking-widest">
@@ -4625,7 +4634,7 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
             <div className="text-center font-mono text-3xl font-bold tabular-nums my-4 tracking-tight">
               {countdown || "—"}
             </div>
-            <p className="text-xs text-brand-text-muted/70 text-center mb-4">Refills every 7 days</p>
+            <p className="text-xs text-brand-text-muted/70 text-center mb-4">Refills every 24 hours</p>
             {errorMsg && (
               <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-white/40 text-xs text-center font-bold uppercase tracking-widest">
                 {errorMsg}
@@ -4773,6 +4782,12 @@ export default function App() {
     setFaucetModalOpen(true);
   };
 
+  useEffect(() => {
+    const open = () => handleFaucetClick();
+    window.addEventListener('litdex:open-faucet', open);
+    return () => window.removeEventListener('litdex:open-faucet', open);
+  }, [walletAddr, openConnectModal]);
+
   // Close dropdown on click outside logic simplified for React
   useEffect(() => {
     const handleScroll = () => setActiveDropdown(null);
@@ -4859,16 +4874,9 @@ export default function App() {
               className="fixed left-6 right-6 z-[60] pointer-events-none flex justify-between items-end"
               style={{ bottom: footerHeight }}
             >
-                {/* Bottom Left Tools */}
-                <div className="hidden lg:flex items-center pointer-events-auto">
-                  <button 
-                    onClick={handleFaucetClick}
-                    className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 hover:bg-black/60 transition-all text-xs font-bold uppercase tracking-[0.2em] text-white/80 backdrop-blur-3xl shadow-2xl"
-                  >
-                    <Droplets size={16} className="group-hover:text-white transition-colors" />
-                    Faucet
-                  </button>
-                </div>
+                {/* Bottom Left Tools (faucet moved into Swap page header) */}
+                <div className="hidden" />
+
 
                 {/* Bottom Right Tools */}
                 <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
