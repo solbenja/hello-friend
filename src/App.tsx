@@ -285,9 +285,10 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   const [amount, setAmount] = useState<string>('1');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>('');
-  const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
-  const [balances, setBalances] = useState<Record<string, string>>({});
-  const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
+   const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
+   const [balances, setBalances] = useState<Record<string, string>>({});
+   const [progress, setProgress] = useState<{ open: boolean; step: number; needsApprove: boolean; amount: string; symbol: string }>({ open: false, step: 0, needsApprove: false, amount: '', symbol: '' });
+   const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
 
   const tokens = BRIDGE_TOKENS[from];
   const token = tokens.find(t => t.symbol === tokenSymbol) || tokens[0];
