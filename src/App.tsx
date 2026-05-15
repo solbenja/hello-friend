@@ -47,7 +47,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAccount, useChainId, useSwitchChain, useBalance } from 'wagmi';
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
-import { formatEther, parseEther, formatUnits, parseUnits } from 'ethers';
+import { formatEther, parseEther, formatUnits, parseUnits, BrowserProvider, Contract } from 'ethers';
 import type * as lib from './lib/litdex-core-logic';
 import SwapCard from './components/ui/crypto-swap-card';
 import { AnimatedNavFramer } from './components/ui/navigation-menu';
