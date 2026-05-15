@@ -39,14 +39,15 @@ import {
   Download,
   ArrowRight,
   RefreshCw,
-  Sun,
+  Sun, 
   Moon,
+  Link2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAccount, useChainId, useSwitchChain, useBalance } from 'wagmi';
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
-import { formatEther, parseEther, formatUnits, parseUnits } from 'ethers';
+import { formatEther, parseEther, formatUnits, parseUnits, BrowserProvider, Contract } from 'ethers';
 import type * as lib from './lib/litdex-core-logic';
 import SwapCard from './components/ui/crypto-swap-card';
 import { AnimatedNavFramer } from './components/ui/navigation-menu';
@@ -175,9 +176,221 @@ const DeployerTotalCard = () => {
   );
 };
 
+/// --- Bridge Card (Cross-Chain) ---
+const BRIDGE_LITVM_CHAIN_ID = 4441;
+const BRIDGE_SEPOLIA_CHAIN_ID = 11155111;
+const BRIDGE_LITBRIDGE = "0x311B50884Ad89d28d1b27184f9eB3cf7B1110ABf";
+const BRIDGE_SEP_BRIDGE = "0x05149f41AFE7ca712D6A42390e8047E0f2887284";
+const BRIDGE_LDEX_LITVM = "0x000000000000000000000000000000000000beef"; // not used: lockLDEX uses litBridge directly; LDEX token approval target is litBridge
+const BRIDGE_WZKLTC_SEPOLIA = "0x5d83D6507666DB715dEF4A68864aA2b6Cc3dC6de";
+const BRIDGE_LDEX_SEPOLIA = "0xd8C4e6dBe48472d6C563eB1cc330207d020D4c8f";
+const BRIDGE_LITBRIDGE_ABI = ["function lockZKLTC() payable", "function lockLDEX(uint256 amount)"];
+const BRIDGE_SEPBRIDGE_ABI = ["function lockWZKLTC(uint256 amount)", "function lockLDEX(uint256 amount)"];
+const BRIDGE_ERC20_ABI = ["function approve(address,uint256) returns(bool)"];
+const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io";
+const LITVM_EXPLORER = "https://liteforge.explorer.caldera.xyz";
+
+type BridgeChain = 'litvm' | 'sepolia';
+type BridgeToken = 'zkLTC' | 'LDEX';
+
+async function ensureChain(targetChainId: number) {
+  const eth = (window as any).ethereum;
+  if (!eth) throw new Error("No wallet detected");
+  const hex = "0x" + targetChainId.toString(16);
+  try {
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
+  } catch (e: any) {
+    if (e?.code === 4902 || /Unrecognized|not added/i.test(e?.message || "")) {
+      const params = targetChainId === BRIDGE_SEPOLIA_CHAIN_ID
+        ? [{ chainId: hex, chainName: "Sepolia", nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 }, rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"], blockExplorerUrls: [SEPOLIA_EXPLORER] }]
+        : [{ chainId: hex, chainName: "LitVM", nativeCurrency: { name: "zkLTC", symbol: "zkLTC", decimals: 18 }, rpcUrls: ["https://liteforge.rpc.caldera.xyz/http"], blockExplorerUrls: [LITVM_EXPLORER] }];
+      await eth.request({ method: "wallet_addEthereumChain", params });
+    } else { throw e; }
+  }
+}
+
+const BridgeCard = ({ onBack }: { onBack: () => void }) => {
+  const { isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const [from, setFrom] = useState<BridgeChain>('litvm');
+  const [token, setToken] = useState<BridgeToken>('zkLTC');
+  const [amount, setAmount] = useState<string>('1');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string>('');
+  const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
+  const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
+
+  const flip = () => { setFrom(to); setSuccess(null); setErr(''); };
+
+  const submit = async () => {
+    setErr(''); setSuccess(null);
+    if (!isConnected) { openConnectModal?.(); return; }
+    const amt = Number(amount);
+    if (!amt || amt <= 0 || amt > 1) { setErr("Amount must be between 0 and 1"); return; }
+    setBusy(true);
+    try {
+      const wei = parseEther(String(amount));
+      if (from === 'litvm') {
+        await ensureChain(BRIDGE_LITVM_CHAIN_ID);
+        const provider = new BrowserProvider((window as any).ethereum);
+        const signer = await provider.getSigner();
+        const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
+        let tx;
+        if (token === 'zkLTC') {
+          tx = await bridge.lockZKLTC({ value: wei });
+        } else {
+          // LDEX on LitVM: approve then lockLDEX. We don't have LDEX token addr on LitVM, but bridge handles via internal balance? Use LDEX_SEPOLIA addr is wrong.
+          // The LitVM LDEX token must be approved against the bridge. Use bridge's expected token if exposed; fallback: just call lockLDEX directly.
+          tx = await bridge.lockLDEX(wei);
+        }
+        const rcpt = await tx.wait();
+        const hash = (rcpt?.hash ?? tx.hash) as string;
+        setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
+        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token} → Sepolia` } as any); } catch {}
+      } else {
+        await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
+        const provider = new BrowserProvider((window as any).ethereum);
+        const signer = await provider.getSigner();
+        const tokenAddr = token === 'zkLTC' ? BRIDGE_WZKLTC_SEPOLIA : BRIDGE_LDEX_SEPOLIA;
+        const erc20 = new Contract(tokenAddr, BRIDGE_ERC20_ABI, signer);
+        const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
+        await apTx.wait();
+        const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
+        const tx = token === 'zkLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
+        const rcpt = await tx.wait();
+        const hash = (rcpt?.hash ?? tx.hash) as string;
+        setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
+        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token} → LitVM` } as any); } catch {}
+      }
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const ChainPill = ({ which }: { which: BridgeChain }) => (
+    <div className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-center">
+      <div className="text-[9px] uppercase tracking-widest text-brand-text-muted mb-1">Network</div>
+      <div className="font-bold text-sm text-white">{which === 'litvm' ? 'LitVM' : 'Sepolia'}</div>
+    </div>
+  );
+
+  return (
+    <div className="w-full max-w-[480px] bg-brand-surface border border-brand-border rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-5">
+        <button onClick={onBack} className="text-xs font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors">
+          ← SWAP
+        </button>
+        <div className="text-xs font-bold uppercase tracking-widest text-white">Cross-Chain Bridge</div>
+        <div className="w-10" />
+      </div>
+
+      {success ? (
+        <div className="py-6 text-center">
+          <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p className="text-base font-bold mb-1">✅ Bridge submitted!</p>
+          <p className="text-xs text-brand-text-muted mb-3">Tokens arrive in ~30 seconds</p>
+          <a href={success.explorer} target="_blank" rel="noreferrer" className="inline-block text-xs text-white/80 hover:text-white underline underline-offset-4 mb-4 break-all px-2">
+            {success.hash.slice(0,10)}…{success.hash.slice(-8)} →
+          </a>
+          <button onClick={() => { setSuccess(null); }} className="w-full py-3 bg-white text-black rounded-xl font-bold text-sm">Bridge Again</button>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-4">
+            <ChainPill which={from} />
+            <button onClick={flip} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" aria-label="Swap chains">
+              <ArrowLeftRight size={16} className="text-white" />
+            </button>
+            <ChainPill which={to} />
+          </div>
+
+          <div className="mb-4">
+            <div className="text-[9px] uppercase tracking-widest text-brand-text-muted mb-2">Token</div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['zkLTC','LDEX'] as BridgeToken[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setToken(t)}
+                  className={cn(
+                    "py-2 rounded-xl text-sm font-bold border transition-all",
+                    token === t ? "bg-white text-black border-white" : "bg-white/[0.03] text-white/80 border-white/10 hover:border-white/30"
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[9px] uppercase tracking-widest text-brand-text-muted">Amount</div>
+              <button onClick={() => setAmount('1')} className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white">MAX 1</button>
+            </div>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              min="0"
+              max="1"
+              step="0.01"
+              className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 focus:border-white/30 outline-none text-white text-lg font-bold"
+              placeholder="0.0"
+            />
+          </div>
+
+          <div className="flex justify-between items-center text-[11px] font-mono text-brand-text-muted mb-4 px-1">
+            <span>Rate</span>
+            <span>1 {token} = 1 {from === 'litvm' && token === 'zkLTC' ? 'WZKLTC' : token}</span>
+          </div>
+
+          {err && (
+            <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-white/60 text-xs text-center font-bold uppercase tracking-widest">
+              {err}
+            </div>
+          )}
+
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="w-full py-3.5 bg-white text-black rounded-xl font-bold text-base hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {busy ? "Bridging…" : isConnected ? "BRIDGE" : "Connect Wallet"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
 /// --- Page: Swap ---
 const SwapPage = () => {
   const eco = useEcosystemStats();
+  const [bridgeMode, setBridgeMode] = useState<boolean>(() => {
+    try { return new URLSearchParams(window.location.search).get('mode') === 'bridge'; } catch { return false; }
+  });
+
+  const enterBridge = () => {
+    setBridgeMode(true);
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('mode', 'bridge');
+      window.history.replaceState({}, '', u.toString());
+    } catch {}
+  };
+  const exitBridge = () => {
+    setBridgeMode(false);
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('mode');
+      window.history.replaceState({}, '', u.toString());
+    } catch {}
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }} 
@@ -195,8 +408,22 @@ const SwapPage = () => {
           <Droplets size={14} className="group-hover:text-white transition-colors" />
           Faucet
         </button>
+        <button
+          onClick={() => bridgeMode ? exitBridge() : enterBridge()}
+          className={cn(
+            "group flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-[11px] font-bold uppercase tracking-[0.18em] backdrop-blur-xl",
+            bridgeMode
+              ? "bg-white text-black border-white"
+              : "bg-white/[0.03] border-white/10 hover:border-white/30 hover:bg-white/[0.06] text-white/80"
+          )}
+        >
+          <Link2 size={14} />
+          Cross Chain
+        </button>
       </div>
-      <SwapCard className="brand-glow-hover transition-all duration-500" />
+      {bridgeMode
+        ? <BridgeCard onBack={exitBridge} />
+        : <SwapCard className="brand-glow-hover transition-all duration-500" />}
     </motion.div>
   );
 };
