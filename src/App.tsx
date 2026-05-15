@@ -436,7 +436,17 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   })();
 
   return (
-    <div className="w-full max-w-md sm:max-w-lg bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6">
+    <div className="w-full max-w-md sm:max-w-lg bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6 relative overflow-visible transition-shadow duration-200 hover:shadow-[0_0_0_1px_#FF6B00,0_0_20px_rgba(255,107,0,0.15)]">
+      {progress.open && (
+        <BridgeProgressModal
+          progress={progress}
+          from={from}
+          to={to}
+          success={success}
+          onClose={() => setProgress(p => ({ ...p, open: false }))}
+          onAgain={() => { setSuccess(null); setProgress({ open: false, step: 0, needsApprove: false, amount: '', symbol: '' }); }}
+        />
+      )}
       <div className="flex items-center justify-between mb-5">
         <button onClick={onBack} className="text-xs font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors">
           ← SWAP
