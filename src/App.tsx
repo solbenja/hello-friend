@@ -5225,12 +5225,15 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1">
           <h2 className="text-xl font-bold tracking-tight">zkLTC Faucet</h2>
           <button onClick={onClose} className="text-brand-text-muted hover:text-white">
             <X size={18} />
           </button>
         </div>
+        <p className="text-center text-xs text-brand-text-muted mb-4 tabular-nums">
+          🚰 {totalClaimed !== null ? totalClaimed.toLocaleString() : '—'} wallets claimed so far
+        </p>
 
         {success ? (
           <div className="py-6 text-center">
