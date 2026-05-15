@@ -648,9 +648,33 @@ const SwapPage = () => {
           Cross Chain
         </button>
       </div>
-      {bridgeMode
-        ? <BridgeCard onBack={exitBridge} />
-        : <SwapCard className="brand-glow-hover transition-all duration-500" />}
+      <div className="relative w-full flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          {bridgeMode ? (
+            <motion.div
+              key="bridge"
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full flex justify-center"
+            >
+              <BridgeCard onBack={exitBridge} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="swap"
+              initial={{ x: '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '-100%', opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full flex justify-center"
+            >
+              <SwapCard className="brand-glow-hover transition-all duration-500" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
