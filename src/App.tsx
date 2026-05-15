@@ -347,57 +347,71 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
     setAmount(amt.toFixed(6).replace(/\.?0+$/, ''));
   };
 
-  const submit = async () => {
-    setErr(''); setSuccess(null);
-    if (!isConnected) { openConnectModal?.(); return; }
-    const amt = Number(amount);
-    if (!amt || amt <= 0 || amt > 1) { setErr("Amount must be between 0 and 1"); return; }
-    setBusy(true);
-    try {
-      const wei = parseEther(String(amount));
-      if (from === 'litvm') {
-        await ensureChain(BRIDGE_LITVM_CHAIN_ID);
-        const provider = new BrowserProvider((window as any).ethereum);
-        const signer = await provider.getSigner();
-        const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
-        let tx;
-        if (token.method === 'lockZKLTC') {
-          tx = await bridge.lockZKLTC({ value: wei });
-        } else {
-          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
-          const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
-          await apTx.wait();
-          tx = await bridge.lockLDEX(wei);
-        }
-        const rcpt = await tx.wait();
-        const hash = (rcpt?.hash ?? tx.hash) as string;
-        setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → Sepolia` } as any); } catch {}
-      } else {
-        await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
-        const provider = new BrowserProvider((window as any).ethereum);
-        const signer = await provider.getSigner();
-        const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
-        let tx;
-        if (token.method === 'lockETH') {
-          tx = await bridge.lockETH({ value: wei });
-        } else {
-          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
-          const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
-          await apTx.wait();
-          tx = token.method === 'lockWZKLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
-        }
-        const rcpt = await tx.wait();
-        const hash = (rcpt?.hash ?? tx.hash) as string;
-        setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → LitVM` } as any); } catch {}
-      }
-    } catch (e: any) {
-      setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+   const submit = async () => {
+     setErr(''); setSuccess(null);
+     if (!isConnected) { openConnectModal?.(); return; }
+     const amt = Number(amount);
+     if (!amt || amt <= 0 || amt > 1) { setErr("Amount must be between 0 and 1"); return; }
+     const isNative = token.method === 'lockZKLTC' || token.method === 'lockETH';
+     const needsApprove = !isNative;
+     setProgress({ open: true, step: 0, needsApprove, amount: String(amount), symbol: token.symbol });
+     setBusy(true);
+     try {
+       const wei = parseEther(String(amount));
+       if (from === 'litvm') {
+         await ensureChain(BRIDGE_LITVM_CHAIN_ID);
+         const provider = new BrowserProvider((window as any).ethereum);
+         const signer = await provider.getSigner();
+         const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
+         let tx;
+         if (token.method === 'lockZKLTC') {
+           setProgress(p => ({ ...p, step: needsApprove ? 2 : 1 }));
+           tx = await bridge.lockZKLTC({ value: wei });
+         } else {
+           const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+           setProgress(p => ({ ...p, step: 1 }));
+           const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
+           await apTx.wait();
+           setProgress(p => ({ ...p, step: 2 }));
+           tx = await bridge.lockLDEX(wei);
+         }
+         setProgress(p => ({ ...p, step: needsApprove ? 3 : 2 }));
+         const rcpt = await tx.wait();
+         const hash = (rcpt?.hash ?? tx.hash) as string;
+         setProgress(p => ({ ...p, step: needsApprove ? 4 : 3 }));
+         setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
+         try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → Sepolia` } as any); } catch {}
+       } else {
+         await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
+         const provider = new BrowserProvider((window as any).ethereum);
+         const signer = await provider.getSigner();
+         const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
+         let tx;
+         if (token.method === 'lockETH') {
+           setProgress(p => ({ ...p, step: needsApprove ? 2 : 1 }));
+           tx = await bridge.lockETH({ value: wei });
+         } else {
+           const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+           setProgress(p => ({ ...p, step: 1 }));
+           const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
+           await apTx.wait();
+           setProgress(p => ({ ...p, step: 2 }));
+           tx = token.method === 'lockWZKLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
+         }
+         setProgress(p => ({ ...p, step: needsApprove ? 3 : 2 }));
+         const rcpt = await tx.wait();
+         const hash = (rcpt?.hash ?? tx.hash) as string;
+         setProgress(p => ({ ...p, step: needsApprove ? 4 : 3 }));
+         setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
+         try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → LitVM` } as any); } catch {}
+       }
+     } catch (e: any) {
+       setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
+       setProgress(p => ({ ...p, open: false }));
+     } finally {
+       setBusy(false);
+     }
+   };
 
   const ChainPill = ({ which, label }: { which: BridgeChain; label: string }) => (
     <div className="flex-1 flex flex-col gap-2 rounded-md border border-brand-border bg-brand-bg px-3 py-3">
