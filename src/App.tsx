@@ -525,7 +525,7 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
               />
 
               {tokenMenuOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
+                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
                   <div className="p-3 border-b border-brand-border">
                     <input
                       type="text"
