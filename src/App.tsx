@@ -597,8 +597,8 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
               />
 
               {tokenMenuOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
-                  <div className="p-3 border-b border-brand-border">
+                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] flex flex-col rounded-xl border border-brand-border bg-brand-surface shadow-2xl backdrop-blur-xl max-h-[min(22rem,70vh)] overflow-hidden">
+                  <div className="p-3 border-b border-brand-border shrink-0 bg-brand-surface sticky top-0 z-10">
                     <input
                       type="text"
                       value={tokenQuery}
@@ -607,7 +607,7 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
                       className="w-full rounded-lg bg-brand-bg px-3 py-2 text-sm outline-none font-medium border border-brand-border focus:border-white transition-colors"
                     />
                   </div>
-                  <div className="max-h-64 overflow-auto p-1">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-1">
                     {filteredTokens.length === 0 && (
                       <div className="px-3 py-4 text-xs text-brand-text-muted font-bold uppercase text-center">
                         No results
