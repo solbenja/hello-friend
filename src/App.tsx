@@ -4515,13 +4515,13 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
   const [status, setStatus] = useState<any>(null);
   const [fetchedAt, setFetchedAt] = useState<number>(Date.now());
   const [claiming, setClaiming] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<{ explorerUrl?: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [countdown, setCountdown] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
-    setSuccess(false);
+    setSuccess(null);
     setErrorMsg("");
     if (!wallet) return;
     let cancelled = false;
@@ -4542,12 +4542,10 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
     const tick = () => {
       const secs = nextClaimIn - Math.floor((Date.now() - fetchedAt) / 1000);
       if (secs <= 0) { setCountdown("Ready!"); return; }
-      const d = Math.floor(secs / 86400);
-      const h = Math.floor((secs % 86400) / 3600);
+      const h = Math.floor(secs / 3600);
       const m = Math.floor((secs % 3600) / 60);
       const s = secs % 60;
-      if (d > 0) setCountdown(`${d}d ${h}h ${m}m`);
-      else setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+      setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
     };
     tick();
     const i = setInterval(tick, 1000);
@@ -4562,16 +4560,10 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
       const { faucetApi } = await import('./lib/litdex-core-logic');
       const res = await faucetApi.claim(wallet);
       if (res.ok) {
-        setSuccess(true);
-        try { addNotif(wallet, { type: "faucet", title: "Faucet Claimed", message: "0.001 zkLTC sent to your wallet" }); } catch {}
+        setSuccess({ explorerUrl: res.explorerUrl });
+        try { addNotif(wallet, { type: "faucet", title: "Faucet Claimed", message: "0.1 zkLTC + 100 Points sent" }); } catch {}
       } else {
-        const reasonMap: Record<string, string> = {
-          no_external: "Need $1+ USDC or BNB on BSC chain",
-          has_enough: "You already have enough zkLTC",
-          cooldown: "Cooldown active",
-        };
-        setErrorMsg(reasonMap[res.reason || ""] || res.message || res.reason || "Claim failed");
-        // refresh status to surface countdown
+        setErrorMsg(res.message || res.reason || "Claim failed");
         try {
           const s = await faucetApi.getStatus(wallet);
           setStatus(s); setFetchedAt(Date.now());
@@ -4603,22 +4595,32 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-white" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <p className="text-lg font-bold mb-1">Claimed!</p>
-            <p className="text-sm text-brand-text-muted mb-6">0.001 zkLTC sent to your wallet</p>
+            <p className="text-lg font-bold mb-1">✅ 0.1 zkLTC + 100 Points sent!</p>
+            <p className="text-sm text-brand-text-muted mb-4">Check your wallet & points balance</p>
+            {success.explorerUrl && (
+              <a
+                href={success.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm text-white/80 hover:text-white underline underline-offset-4 mb-6"
+              >
+                View on Explorer →
+              </a>
+            )}
             <button onClick={onClose} className="w-full py-3 bg-white text-black rounded-xl font-bold text-sm">Close</button>
           </div>
         ) : !status ? (
           <p className="text-brand-text-muted text-sm py-8 text-center">Loading status…</p>
         ) : canClaim ? (
           <>
-            <p className="text-brand-text-muted text-sm mb-2">Claim 0.001 zkLTC to get started on LitVM testnet</p>
-            <p className="text-xs text-brand-text-muted/70 mb-6">Requires $1+ USDC or BNB on BSC chain</p>
+            <p className="text-brand-text-muted text-sm mb-2">Claim free testnet tokens to get started</p>
+            <p className="text-xs text-brand-text-muted/70 mb-6">Get 0.1 zkLTC + 100 Points • 24hr cooldown</p>
             <button
               onClick={handleClaim}
               disabled={claiming}
               className="w-full py-3.5 bg-white text-black rounded-xl font-bold text-base hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {claiming ? "Claiming..." : "Claim 0.001 zkLTC"}
+              {claiming ? "Claiming..." : "Claim 0.1 zkLTC + 100 Points"}
             </button>
             {errorMsg && (
               <div className="mt-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-white/40 text-xs text-center font-bold uppercase tracking-widest">
@@ -4632,7 +4634,7 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
             <div className="text-center font-mono text-3xl font-bold tabular-nums my-4 tracking-tight">
               {countdown || "—"}
             </div>
-            <p className="text-xs text-brand-text-muted/70 text-center mb-4">Refills every 7 days</p>
+            <p className="text-xs text-brand-text-muted/70 text-center mb-4">Refills every 24 hours</p>
             {errorMsg && (
               <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-white/40 text-xs text-center font-bold uppercase tracking-widest">
                 {errorMsg}
