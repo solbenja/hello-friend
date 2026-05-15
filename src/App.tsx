@@ -275,6 +275,78 @@ const BridgeTokenLogo = ({ symbol, size = 20 }: { symbol: string; size?: number 
   );
 };
 
+const BridgeProgressModal = ({ progress, from, to, success, onClose, onAgain }: any) => {
+  const labels = progress.needsApprove
+    ? (from === 'litvm'
+      ? ['LitVM', 'Approve', 'Confirm', 'Bridging', 'Sepolia ✓']
+      : ['Sepolia', 'Approve', 'Confirm', 'Bridging', 'LitVM ✓'])
+    : (from === 'litvm'
+      ? ['LitVM', 'Confirm', 'Bridging', 'Sepolia ✓']
+      : ['Sepolia', 'Confirm', 'Bridging', 'LitVM ✓']);
+  const lastIdx = labels.length - 1;
+  const arrived = !!success;
+  const fromName = from === 'litvm' ? 'LitVM' : 'Sepolia';
+  const toName = to === 'litvm' ? 'LitVM' : 'Sepolia';
+  const Circle = ({ state }: { state: 'pending'|'active'|'complete' }) => {
+    if (state === 'complete') {
+      return (
+        <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#1D9E75' }}>
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+      );
+    }
+    if (state === 'active') {
+      return <div className="w-7 h-7 rounded-full animate-pulse border-2" style={{ background: '#FF6B00', borderColor: '#FF6B00', boxShadow: '0 0 12px rgba(255,107,0,0.6)' }} />;
+    }
+    return <div className="w-7 h-7 rounded-full border-2 border-white/20 bg-transparent" />;
+  };
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6" onClick={(e: any) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-xs font-bold uppercase tracking-widest text-white">Bridging</div>
+          <button onClick={onClose} className="text-brand-text-muted hover:text-white text-xs font-bold">✕</button>
+        </div>
+        <div className="flex items-center justify-center gap-2 mb-5 text-sm font-bold">
+          <div className="size-7 rounded-full bg-white/10 border border-brand-border flex items-center justify-center text-[9px]">{from === 'litvm' ? 'LV' : 'SE'}</div>
+          <span>{fromName}</span>
+          <span className="text-brand-text-muted">→</span>
+          <div className="size-7 rounded-full bg-white/10 border border-brand-border flex items-center justify-center text-[9px]">{to === 'litvm' ? 'LV' : 'SE'}</div>
+          <span>{toName}</span>
+        </div>
+        <div className="text-center text-xs font-mono text-brand-text-muted mb-6">
+          <span className="text-white text-base font-bold">{progress.amount} {progress.symbol}</span>
+        </div>
+        <div className="flex items-start justify-between mb-6 px-1">
+          {labels.map((label: string, i: number) => {
+            const state: 'pending'|'active'|'complete' = arrived
+              ? 'complete'
+              : i < progress.step ? 'complete' : i === progress.step ? 'active' : 'pending';
+            return (
+              <div key={i} className="flex flex-col items-center flex-1 min-w-0 relative">
+                {i < lastIdx && (
+                  <div className="absolute top-3.5 left-1/2 w-full h-px" style={{ background: (arrived || i < progress.step) ? '#1D9E75' : 'rgba(255,255,255,0.15)' }} />
+                )}
+                <div className="relative z-10 bg-brand-surface px-1"><Circle state={state} /></div>
+                <div className="text-[9px] font-bold uppercase tracking-wide mt-2 text-center text-white/80">{label}</div>
+              </div>
+            );
+          })}
+        </div>
+        {arrived ? (
+          <div className="text-center">
+            <div className="text-sm font-bold mb-2">✅ {progress.amount} {progress.symbol} arrived on {toName}!</div>
+            <a href={success.explorer} target="_blank" rel="noreferrer" className="inline-block text-xs text-white/80 hover:text-white underline underline-offset-4 mb-4">View on Explorer →</a>
+            <button onClick={onAgain} className="w-full py-3 bg-white text-black rounded-xl font-bold text-sm">Bridge Again</button>
+          </div>
+        ) : (
+          <div className="text-center text-[11px] font-mono text-brand-text-muted">Please confirm in your wallet…</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
@@ -285,9 +357,10 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   const [amount, setAmount] = useState<string>('1');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>('');
-  const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
-  const [balances, setBalances] = useState<Record<string, string>>({});
-  const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
+   const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
+   const [balances, setBalances] = useState<Record<string, string>>({});
+   const [progress, setProgress] = useState<{ open: boolean; step: number; needsApprove: boolean; amount: string; symbol: string }>({ open: false, step: 0, needsApprove: false, amount: '', symbol: '' });
+   const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
 
   const tokens = BRIDGE_TOKENS[from];
   const token = tokens.find(t => t.symbol === tokenSymbol) || tokens[0];
@@ -346,57 +419,71 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
     setAmount(amt.toFixed(6).replace(/\.?0+$/, ''));
   };
 
-  const submit = async () => {
-    setErr(''); setSuccess(null);
-    if (!isConnected) { openConnectModal?.(); return; }
-    const amt = Number(amount);
-    if (!amt || amt <= 0 || amt > 1) { setErr("Amount must be between 0 and 1"); return; }
-    setBusy(true);
-    try {
-      const wei = parseEther(String(amount));
-      if (from === 'litvm') {
-        await ensureChain(BRIDGE_LITVM_CHAIN_ID);
-        const provider = new BrowserProvider((window as any).ethereum);
-        const signer = await provider.getSigner();
-        const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
-        let tx;
-        if (token.method === 'lockZKLTC') {
-          tx = await bridge.lockZKLTC({ value: wei });
-        } else {
-          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
-          const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
-          await apTx.wait();
-          tx = await bridge.lockLDEX(wei);
-        }
-        const rcpt = await tx.wait();
-        const hash = (rcpt?.hash ?? tx.hash) as string;
-        setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → Sepolia` } as any); } catch {}
-      } else {
-        await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
-        const provider = new BrowserProvider((window as any).ethereum);
-        const signer = await provider.getSigner();
-        const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
-        let tx;
-        if (token.method === 'lockETH') {
-          tx = await bridge.lockETH({ value: wei });
-        } else {
-          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
-          const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
-          await apTx.wait();
-          tx = token.method === 'lockWZKLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
-        }
-        const rcpt = await tx.wait();
-        const hash = (rcpt?.hash ?? tx.hash) as string;
-        setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → LitVM` } as any); } catch {}
-      }
-    } catch (e: any) {
-      setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+   const submit = async () => {
+     setErr(''); setSuccess(null);
+     if (!isConnected) { openConnectModal?.(); return; }
+     const amt = Number(amount);
+     if (!amt || amt <= 0 || amt > 1) { setErr("Amount must be between 0 and 1"); return; }
+     const isNative = token.method === 'lockZKLTC' || token.method === 'lockETH';
+     const needsApprove = !isNative;
+     setProgress({ open: true, step: 0, needsApprove, amount: String(amount), symbol: token.symbol });
+     setBusy(true);
+     try {
+       const wei = parseEther(String(amount));
+       if (from === 'litvm') {
+         await ensureChain(BRIDGE_LITVM_CHAIN_ID);
+         const provider = new BrowserProvider((window as any).ethereum);
+         const signer = await provider.getSigner();
+         const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
+         let tx;
+         if (token.method === 'lockZKLTC') {
+           setProgress(p => ({ ...p, step: needsApprove ? 2 : 1 }));
+           tx = await bridge.lockZKLTC({ value: wei });
+         } else {
+           const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+           setProgress(p => ({ ...p, step: 1 }));
+           const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
+           await apTx.wait();
+           setProgress(p => ({ ...p, step: 2 }));
+           tx = await bridge.lockLDEX(wei);
+         }
+         setProgress(p => ({ ...p, step: needsApprove ? 3 : 2 }));
+         const rcpt = await tx.wait();
+         const hash = (rcpt?.hash ?? tx.hash) as string;
+         setProgress(p => ({ ...p, step: needsApprove ? 4 : 3 }));
+         setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
+         try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → Sepolia` } as any); } catch {}
+       } else {
+         await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
+         const provider = new BrowserProvider((window as any).ethereum);
+         const signer = await provider.getSigner();
+         const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
+         let tx;
+         if (token.method === 'lockETH') {
+           setProgress(p => ({ ...p, step: needsApprove ? 2 : 1 }));
+           tx = await bridge.lockETH({ value: wei });
+         } else {
+           const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+           setProgress(p => ({ ...p, step: 1 }));
+           const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
+           await apTx.wait();
+           setProgress(p => ({ ...p, step: 2 }));
+           tx = token.method === 'lockWZKLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
+         }
+         setProgress(p => ({ ...p, step: needsApprove ? 3 : 2 }));
+         const rcpt = await tx.wait();
+         const hash = (rcpt?.hash ?? tx.hash) as string;
+         setProgress(p => ({ ...p, step: needsApprove ? 4 : 3 }));
+         setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
+         try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → LitVM` } as any); } catch {}
+       }
+     } catch (e: any) {
+       setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
+       setProgress(p => ({ ...p, open: false }));
+     } finally {
+       setBusy(false);
+     }
+   };
 
   const ChainPill = ({ which, label }: { which: BridgeChain; label: string }) => (
     <div className="flex-1 flex flex-col gap-2 rounded-md border border-brand-border bg-brand-bg px-3 py-3">
@@ -421,7 +508,17 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
   })();
 
   return (
-    <div className="w-full max-w-md sm:max-w-lg bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6">
+    <div className="w-full max-w-md sm:max-w-lg bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6 relative overflow-visible transition-shadow duration-200 hover:shadow-[0_0_0_1px_#FF6B00,0_0_20px_rgba(255,107,0,0.15)]">
+      {progress.open && (
+        <BridgeProgressModal
+          progress={progress}
+          from={from}
+          to={to}
+          success={success}
+          onClose={() => setProgress(p => ({ ...p, open: false }))}
+          onAgain={() => { setSuccess(null); setProgress({ open: false, step: 0, needsApprove: false, amount: '', symbol: '' }); }}
+        />
+      )}
       <div className="flex items-center justify-between mb-5">
         <button onClick={onBack} className="text-xs font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors">
           ← SWAP
@@ -500,7 +597,7 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
               />
 
               {tokenMenuOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
+                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
                   <div className="p-3 border-b border-brand-border">
                     <input
                       type="text"
