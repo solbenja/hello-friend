@@ -1093,18 +1093,21 @@ export const faucetApi = {
       return (await r.json()) as FaucetStatus;
     } catch { return null; }
   },
-  claim: async (wallet: string): Promise<{ ok: boolean; reason?: string; message?: string; status: number }> => {
+  claim: async (wallet: string): Promise<{ ok: boolean; reason?: string; message?: string; status: number; txHash?: string; explorerUrl?: string; nextClaimIn?: number }> => {
     const r = await fetch(`${FAUCET_API}/faucet/claim`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet }),
     });
-    const j = await r.json().catch(() => ({} as { reason?: string; message?: string; success?: boolean }));
+    const j = await r.json().catch(() => ({} as any));
     return {
       ok: r.ok && j?.success !== false,
       reason: j?.reason,
       message: j?.message,
       status: r.status,
+      txHash: j?.txHash || j?.tx_hash,
+      explorerUrl: j?.explorerUrl || j?.explorer_url || (j?.txHash ? `https://explorer.litprotocol.network/tx/${j.txHash}` : undefined),
+      nextClaimIn: j?.nextClaimIn,
     };
   },
 };
