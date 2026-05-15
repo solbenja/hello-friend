@@ -47,7 +47,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAccount, useChainId, useSwitchChain, useBalance } from 'wagmi';
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
-import { formatEther, parseEther, formatUnits, parseUnits, BrowserProvider, Contract } from 'ethers';
+import { formatEther, parseEther, formatUnits, parseUnits, BrowserProvider, Contract, JsonRpcProvider } from 'ethers';
 import type * as lib from './lib/litdex-core-logic';
 import SwapCard from './components/ui/crypto-swap-card';
 import { AnimatedNavFramer } from './components/ui/navigation-menu';
@@ -179,19 +179,42 @@ const DeployerTotalCard = () => {
 /// --- Bridge Card (Cross-Chain) ---
 const BRIDGE_LITVM_CHAIN_ID = 4441;
 const BRIDGE_SEPOLIA_CHAIN_ID = 11155111;
-const BRIDGE_LITBRIDGE = "0x311B50884Ad89d28d1b27184f9eB3cf7B1110ABf";
-const BRIDGE_SEP_BRIDGE = "0x05149f41AFE7ca712D6A42390e8047E0f2887284";
-const BRIDGE_LDEX_LITVM = "0x000000000000000000000000000000000000beef"; // not used: lockLDEX uses litBridge directly; LDEX token approval target is litBridge
-const BRIDGE_WZKLTC_SEPOLIA = "0x5d83D6507666DB715dEF4A68864aA2b6Cc3dC6de";
-const BRIDGE_LDEX_SEPOLIA = "0xd8C4e6dBe48472d6C563eB1cc330207d020D4c8f";
+const BRIDGE_LITBRIDGE = "0x8F154dA71735869559D326306056430Db51e7233";
+const BRIDGE_SEP_BRIDGE = "0xc4807A6547339aE1c38EE1Cc4A27c5A7acb9c38C";
+const BRIDGE_LDEX_LITVM = "0xBAaba603e6298fbb76325a6B0d47Cd57154ca641";
+const BRIDGE_WZKLTC_SEPOLIA = "0xBE9C63907d0Bfaa55EF8729907f37B9c60863fc7";
+const BRIDGE_LDEX_SEPOLIA = "0x688dB3dbd582D9E394bdE138ad1d1dD162b18A07";
 const BRIDGE_LITBRIDGE_ABI = ["function lockZKLTC() payable", "function lockLDEX(uint256 amount)"];
-const BRIDGE_SEPBRIDGE_ABI = ["function lockWZKLTC(uint256 amount)", "function lockLDEX(uint256 amount)"];
-const BRIDGE_ERC20_ABI = ["function approve(address,uint256) returns(bool)"];
+const BRIDGE_SEPBRIDGE_ABI = ["function lockETH() payable", "function lockWZKLTC(uint256 amount)", "function lockLDEX(uint256 amount)"];
+const BRIDGE_ERC20_ABI = ["function approve(address,uint256) returns(bool)", "function balanceOf(address) view returns(uint256)"];
 const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io";
 const LITVM_EXPLORER = "https://liteforge.explorer.caldera.xyz";
+const LITVM_RPC = "https://liteforge.rpc.caldera.xyz/http";
+const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
 type BridgeChain = 'litvm' | 'sepolia';
-type BridgeToken = 'zkLTC' | 'LDEX';
+
+type BridgeTokenDef = {
+  symbol: string;
+  // 'native' means use chain native currency (msg.value)
+  address: 'native' | string;
+  // bridge method to call on the source chain bridge contract
+  method: 'lockZKLTC' | 'lockLDEX' | 'lockETH' | 'lockWZKLTC';
+  // destination symbol (for rate display)
+  destSymbol: string;
+};
+
+const BRIDGE_TOKENS: Record<BridgeChain, BridgeTokenDef[]> = {
+  litvm: [
+    { symbol: 'zkLTC', address: 'native', method: 'lockZKLTC', destSymbol: 'WZKLTC' },
+    { symbol: 'LDEX', address: BRIDGE_LDEX_LITVM, method: 'lockLDEX', destSymbol: 'LDEX' },
+  ],
+  sepolia: [
+    { symbol: 'ETH', address: 'native', method: 'lockETH', destSymbol: 'zkLTC' },
+    { symbol: 'WZKLTC', address: BRIDGE_WZKLTC_SEPOLIA, method: 'lockWZKLTC', destSymbol: 'zkLTC' },
+    { symbol: 'LDEX', address: BRIDGE_LDEX_SEPOLIA, method: 'lockLDEX', destSymbol: 'LDEX' },
+  ],
+};
 
 async function ensureChain(targetChainId: number) {
   const eth = (window as any).ethereum;
@@ -202,25 +225,73 @@ async function ensureChain(targetChainId: number) {
   } catch (e: any) {
     if (e?.code === 4902 || /Unrecognized|not added/i.test(e?.message || "")) {
       const params = targetChainId === BRIDGE_SEPOLIA_CHAIN_ID
-        ? [{ chainId: hex, chainName: "Sepolia", nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 }, rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"], blockExplorerUrls: [SEPOLIA_EXPLORER] }]
-        : [{ chainId: hex, chainName: "LitVM", nativeCurrency: { name: "zkLTC", symbol: "zkLTC", decimals: 18 }, rpcUrls: ["https://liteforge.rpc.caldera.xyz/http"], blockExplorerUrls: [LITVM_EXPLORER] }];
+        ? [{ chainId: hex, chainName: "Sepolia", nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 }, rpcUrls: [SEPOLIA_RPC], blockExplorerUrls: [SEPOLIA_EXPLORER] }]
+        : [{ chainId: hex, chainName: "LitVM", nativeCurrency: { name: "zkLTC", symbol: "zkLTC", decimals: 18 }, rpcUrls: [LITVM_RPC], blockExplorerUrls: [LITVM_EXPLORER] }];
       await eth.request({ method: "wallet_addEthereumChain", params });
     } else { throw e; }
   }
 }
 
 const BridgeCard = ({ onBack }: { onBack: () => void }) => {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const [from, setFrom] = useState<BridgeChain>('litvm');
-  const [token, setToken] = useState<BridgeToken>('zkLTC');
+  const [tokenSymbol, setTokenSymbol] = useState<string>('zkLTC');
+  const [tokenMenuOpen, setTokenMenuOpen] = useState(false);
   const [amount, setAmount] = useState<string>('1');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>('');
   const [success, setSuccess] = useState<{ hash: string; explorer: string } | null>(null);
+  const [balances, setBalances] = useState<Record<string, string>>({});
   const to: BridgeChain = from === 'litvm' ? 'sepolia' : 'litvm';
 
+  const tokens = BRIDGE_TOKENS[from];
+  const token = tokens.find(t => t.symbol === tokenSymbol) || tokens[0];
+
+  // Reset token when switching chain to a chain that doesn't have current token
+  useEffect(() => {
+    if (!tokens.find(t => t.symbol === tokenSymbol)) {
+      setTokenSymbol(tokens[0].symbol);
+    }
+  }, [from]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch balances for current chain tokens
+  useEffect(() => {
+    if (!address) { setBalances({}); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const rpc = from === 'litvm' ? LITVM_RPC : SEPOLIA_RPC;
+        const provider = new JsonRpcProvider(rpc);
+        const out: Record<string, string> = {};
+        for (const t of tokens) {
+          try {
+            if (t.address === 'native') {
+              const bal = await provider.getBalance(address);
+              out[t.symbol] = formatEther(bal);
+            } else {
+              const erc = new Contract(t.address, BRIDGE_ERC20_ABI, provider);
+              const bal: bigint = await erc.balanceOf(address);
+              out[t.symbol] = formatEther(bal);
+            }
+          } catch { out[t.symbol] = '0'; }
+        }
+        if (!cancelled) setBalances(out);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [address, from, success]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const flip = () => { setFrom(to); setSuccess(null); setErr(''); };
+
+  const fmtBal = (v?: string) => {
+    if (!v) return '0';
+    const n = Number(v);
+    if (!isFinite(n)) return '0';
+    if (n === 0) return '0';
+    if (n < 0.0001) return '<0.0001';
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  };
 
   const submit = async () => {
     setErr(''); setSuccess(null);
@@ -236,31 +307,37 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
         const signer = await provider.getSigner();
         const bridge = new Contract(BRIDGE_LITBRIDGE, BRIDGE_LITBRIDGE_ABI, signer);
         let tx;
-        if (token === 'zkLTC') {
+        if (token.method === 'lockZKLTC') {
           tx = await bridge.lockZKLTC({ value: wei });
         } else {
-          // LDEX on LitVM: approve then lockLDEX. We don't have LDEX token addr on LitVM, but bridge handles via internal balance? Use LDEX_SEPOLIA addr is wrong.
-          // The LitVM LDEX token must be approved against the bridge. Use bridge's expected token if exposed; fallback: just call lockLDEX directly.
+          // LDEX: approve bridge then lock
+          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+          const apTx = await erc20.approve(BRIDGE_LITBRIDGE, wei);
+          await apTx.wait();
           tx = await bridge.lockLDEX(wei);
         }
         const rcpt = await tx.wait();
         const hash = (rcpt?.hash ?? tx.hash) as string;
         setSuccess({ hash, explorer: `${LITVM_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token} → Sepolia` } as any); } catch {}
+        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → Sepolia` } as any); } catch {}
       } else {
         await ensureChain(BRIDGE_SEPOLIA_CHAIN_ID);
         const provider = new BrowserProvider((window as any).ethereum);
         const signer = await provider.getSigner();
-        const tokenAddr = token === 'zkLTC' ? BRIDGE_WZKLTC_SEPOLIA : BRIDGE_LDEX_SEPOLIA;
-        const erc20 = new Contract(tokenAddr, BRIDGE_ERC20_ABI, signer);
-        const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
-        await apTx.wait();
         const bridge = new Contract(BRIDGE_SEP_BRIDGE, BRIDGE_SEPBRIDGE_ABI, signer);
-        const tx = token === 'zkLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
+        let tx;
+        if (token.method === 'lockETH') {
+          tx = await bridge.lockETH({ value: wei });
+        } else {
+          const erc20 = new Contract(token.address as string, BRIDGE_ERC20_ABI, signer);
+          const apTx = await erc20.approve(BRIDGE_SEP_BRIDGE, wei);
+          await apTx.wait();
+          tx = token.method === 'lockWZKLTC' ? await bridge.lockWZKLTC(wei) : await bridge.lockLDEX(wei);
+        }
         const rcpt = await tx.wait();
         const hash = (rcpt?.hash ?? tx.hash) as string;
         setSuccess({ hash, explorer: `${SEPOLIA_EXPLORER}/tx/${hash}` });
-        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token} → LitVM` } as any); } catch {}
+        try { addNotif(undefined as any, { type: "bridge", title: "Bridge submitted", message: `${amount} ${token.symbol} → LitVM` } as any); } catch {}
       }
     } catch (e: any) {
       setErr(e?.shortMessage || e?.reason || e?.message || "Bridge failed");
@@ -309,20 +386,35 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           <div className="mb-4">
-            <div className="text-[9px] uppercase tracking-widest text-brand-text-muted mb-2">Token</div>
-            <div className="grid grid-cols-2 gap-2">
-              {(['zkLTC','LDEX'] as BridgeToken[]).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setToken(t)}
-                  className={cn(
-                    "py-2 rounded-xl text-sm font-bold border transition-all",
-                    token === t ? "bg-white text-black border-white" : "bg-white/[0.03] text-white/80 border-white/10 hover:border-white/30"
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[9px] uppercase tracking-widest text-brand-text-muted">Token</div>
+              <div className="text-[10px] font-mono text-white/50">Bal: {fmtBal(balances[token.symbol])}</div>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setTokenMenuOpen(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 transition-all"
+              >
+                <span className="font-bold text-sm text-white">{token.symbol}</span>
+                <svg className={cn("w-4 h-4 text-white/60 transition-transform", tokenMenuOpen && "rotate-180")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              {tokenMenuOpen && (
+                <div className="absolute z-20 mt-1 w-full rounded-xl bg-brand-surface border border-white/10 overflow-hidden shadow-xl">
+                  {tokens.map(t => (
+                    <button
+                      key={t.symbol}
+                      onClick={() => { setTokenSymbol(t.symbol); setTokenMenuOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold hover:bg-white/5 transition-colors",
+                        t.symbol === token.symbol ? "text-white bg-white/[0.04]" : "text-white/80"
+                      )}
+                    >
+                      <span>{t.symbol}</span>
+                      <span className="text-[10px] font-mono text-white/50">{fmtBal(balances[t.symbol])}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -345,7 +437,7 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
 
           <div className="flex justify-between items-center text-[11px] font-mono text-brand-text-muted mb-4 px-1">
             <span>Rate</span>
-            <span>1 {token} = 1 {from === 'litvm' && token === 'zkLTC' ? 'WZKLTC' : token}</span>
+            <span>1 {token.symbol} = 1 {token.destSymbol}</span>
           </div>
 
           {err && (
@@ -417,7 +509,7 @@ const SwapPage = () => {
               : "bg-white/[0.03] border-white/10 hover:border-white/30 hover:bg-white/[0.06] text-white/80"
           )}
         >
-          <Link2 size={14} />
+          <span className="text-base leading-none">⛓️</span>
           Cross Chain
         </button>
       </div>
