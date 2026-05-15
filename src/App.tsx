@@ -4780,6 +4780,12 @@ export default function App() {
     setFaucetModalOpen(true);
   };
 
+  useEffect(() => {
+    const open = () => handleFaucetClick();
+    window.addEventListener('litdex:open-faucet', open);
+    return () => window.removeEventListener('litdex:open-faucet', open);
+  }, [walletAddr, openConnectModal]);
+
   // Close dropdown on click outside logic simplified for React
   useEffect(() => {
     const handleScroll = () => setActiveDropdown(null);
