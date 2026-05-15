@@ -4543,22 +4543,25 @@ const GlobalConvertStats = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const [stats, setStats] = useState<{ totalTxns: number; totalPoints: number; totalZkltc: number } | null>(null);
   useEffect(() => {
     let alive = true;
+    let retry: any = null;
     const load = async () => {
-      try {
-        const r = await fetch('https://game.test-hub.xyz/convert/stats/global');
-        const d = await r.json();
-        if (!alive) return;
+      const d = await fetchJsonWithTimeout('https://game.test-hub.xyz/convert/stats/global', 8000);
+      if (!alive) return;
+      if (d) {
         const u = d?.global ?? d?.stats ?? d ?? {};
         setStats({
           totalTxns: Number(u.totalTxns ?? 0),
           totalPoints: Number(u.totalPointsConverted ?? u.totalPoints ?? 0),
           totalZkltc: Number(u.totalZkltcSent ?? u.totalZkltcDistributed ?? u.totalZkltc ?? u.totalZkltcReceived ?? 0),
         });
-      } catch {}
+      } else {
+        if (retry) clearTimeout(retry);
+        retry = setTimeout(load, 30000);
+      }
     };
     load();
     const id = setInterval(load, 30000);
-    return () => { alive = false; clearInterval(id); };
+    return () => { alive = false; clearInterval(id); if (retry) clearTimeout(retry); };
   }, [reloadKey]);
 
   const Row = ({ label, value }: { label: string; value: string }) => (
