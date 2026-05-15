@@ -597,8 +597,8 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
               />
 
               {tokenMenuOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] rounded-xl border border-brand-border bg-brand-surface shadow-2xl overflow-hidden backdrop-blur-xl">
-                  <div className="p-3 border-b border-brand-border">
+                <div className="absolute left-0 right-0 top-full mt-2 z-[9999] flex flex-col rounded-xl border border-brand-border bg-brand-surface shadow-2xl backdrop-blur-xl max-h-[min(22rem,70vh)] overflow-hidden">
+                  <div className="p-3 border-b border-brand-border shrink-0 bg-brand-surface sticky top-0 z-10">
                     <input
                       type="text"
                       value={tokenQuery}
@@ -607,7 +607,7 @@ const BridgeCard = ({ onBack }: { onBack: () => void }) => {
                       className="w-full rounded-lg bg-brand-bg px-3 py-2 text-sm outline-none font-medium border border-brand-border focus:border-white transition-colors"
                     />
                   </div>
-                  <div className="max-h-64 overflow-auto p-1">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-1">
                     {filteredTokens.length === 0 && (
                       <div className="px-3 py-4 text-xs text-brand-text-muted font-bold uppercase text-center">
                         No results
@@ -5141,6 +5141,25 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
   const [success, setSuccess] = useState<{ explorerUrl?: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [countdown, setCountdown] = useState<string>("");
+  const [totalClaimed, setTotalClaimed] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch('https://quest.litdex.io/faucet/stats', { signal: ctrl.signal });
+        clearTimeout(t);
+        const j = await r.json();
+        if (!cancelled && typeof j?.totalClaimed === 'number') setTotalClaimed(j.totalClaimed);
+      } catch { /* ignore */ }
+    };
+    load();
+    const i = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -5206,12 +5225,15 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1">
           <h2 className="text-xl font-bold tracking-tight">zkLTC Faucet</h2>
           <button onClick={onClose} className="text-brand-text-muted hover:text-white">
             <X size={18} />
           </button>
         </div>
+        <p className="text-center text-xs text-brand-text-muted mb-4 tabular-nums">
+          🚰 {totalClaimed !== null ? totalClaimed.toLocaleString() : '—'} wallets claimed so far
+        </p>
 
         {success ? (
           <div className="py-6 text-center">
