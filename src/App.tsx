@@ -5141,6 +5141,25 @@ const FaucetModal = ({ open, onClose, wallet }: { open: boolean; onClose: () => 
   const [success, setSuccess] = useState<{ explorerUrl?: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [countdown, setCountdown] = useState<string>("");
+  const [totalClaimed, setTotalClaimed] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch('https://quest.litdex.io/faucet/stats', { signal: ctrl.signal });
+        clearTimeout(t);
+        const j = await r.json();
+        if (!cancelled && typeof j?.totalClaimed === 'number') setTotalClaimed(j.totalClaimed);
+      } catch { /* ignore */ }
+    };
+    load();
+    const i = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
