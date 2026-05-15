@@ -179,6 +179,27 @@ const DeployerTotalCard = () => {
 /// --- Page: Swap ---
 const SwapPage = () => {
   const eco = useEcosystemStats();
+  const [bridgeMode, setBridgeMode] = useState<boolean>(() => {
+    try { return new URLSearchParams(window.location.search).get('mode') === 'bridge'; } catch { return false; }
+  });
+
+  const enterBridge = () => {
+    setBridgeMode(true);
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('mode', 'bridge');
+      window.history.replaceState({}, '', u.toString());
+    } catch {}
+  };
+  const exitBridge = () => {
+    setBridgeMode(false);
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('mode');
+      window.history.replaceState({}, '', u.toString());
+    } catch {}
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }} 
@@ -196,8 +217,22 @@ const SwapPage = () => {
           <Droplets size={14} className="group-hover:text-white transition-colors" />
           Faucet
         </button>
+        <button
+          onClick={() => bridgeMode ? exitBridge() : enterBridge()}
+          className={cn(
+            "group flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-[11px] font-bold uppercase tracking-[0.18em] backdrop-blur-xl",
+            bridgeMode
+              ? "bg-white text-black border-white"
+              : "bg-white/[0.03] border-white/10 hover:border-white/30 hover:bg-white/[0.06] text-white/80"
+          )}
+        >
+          <Link2 size={14} />
+          Cross Chain
+        </button>
       </div>
-      <SwapCard className="brand-glow-hover transition-all duration-500" />
+      {bridgeMode
+        ? <BridgeCard onBack={exitBridge} />
+        : <SwapCard className="brand-glow-hover transition-all duration-500" />}
     </motion.div>
   );
 };
